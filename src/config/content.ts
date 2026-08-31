@@ -28,15 +28,15 @@ export interface ServiceItem {
   readonly price: string;
 }
 
+export interface SelectOption {
+  readonly value: string;
+  readonly label: string;
+}
+
 export interface VehicleCategory {
   readonly title: string;
   readonly description: string;
   readonly examples: string;
-}
-
-export interface Testimonial {
-  readonly quote: string;
-  readonly attribution: string;
 }
 
 export const home = {
@@ -82,19 +82,6 @@ export const home = {
     description:
       "Tokyo2CH sources Japanese vehicles to your specifications, manages the import process, and brings your chosen car smoothly to Switzerland.",
   },
-
-  testimonials: [
-    {
-      quote:
-        "Tokyo2CH found the exact Japanese model I wanted and handled every import detail flawlessly.",
-      attribution: "Imported a performance coupé",
-    },
-    {
-      quote:
-        "Clear communication, careful sourcing, and a smooth Swiss delivery made the whole process effortless.",
-      attribution: "Imported a compact 4x4",
-    },
-  ] as const satisfies readonly Testimonial[],
 
   cta: {
     title: "Tell us the car you have in mind.",
@@ -277,10 +264,43 @@ export const faq = {
   ],
 } as const;
 
+/**
+ * Enquiry form.
+ *
+ * The option lists live here rather than in the component because they are the
+ * part most likely to be revised by whoever answers the enquiries, and because
+ * the Zod schema derives its allowed values from these same arrays — so adding
+ * a choice here cannot fall out of sync with what the server will accept.
+ */
+export const contactForm = {
+  transmission: [
+    { value: "manual", label: "Manual" },
+    { value: "automatic", label: "Automatic" },
+    { value: "any", label: "No preference" },
+  ] as const satisfies readonly SelectOption[],
+
+  condition: [
+    { value: "showroom", label: "Showroom / collector" },
+    { value: "excellent", label: "Excellent" },
+    { value: "good", label: "Good — normal wear" },
+    { value: "project", label: "Project / needs work" },
+    { value: "any", label: "No preference" },
+  ] as const satisfies readonly SelectOption[],
+
+  referral: [
+    { value: "instagram", label: "Instagram" },
+    { value: "facebook", label: "Facebook" },
+    { value: "tiktok", label: "TikTok" },
+    { value: "search", label: "Google / search" },
+    { value: "word-of-mouth", label: "Word of mouth" },
+    { value: "other", label: "Other" },
+  ] as const satisfies readonly SelectOption[],
+} as const;
+
 export const contact = {
   hero: {
     eyebrow: "Contact",
-    title: "Start your import",
+    title: "Request a vehicle",
     description:
       "Tell us which Japanese vehicle you are looking for, and we will handle the sourcing and import process.",
   },

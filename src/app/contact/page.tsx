@@ -31,7 +31,9 @@ const DETAILS = [
   },
   { icon: MapPin, label: "Address", value: siteConfig.contact.address, href: undefined },
   { icon: Clock, label: "Hours", value: siteConfig.contact.hours, href: undefined },
-] as const;
+  // Rows with no value are dropped rather than rendered empty — the postal
+  // address is not published yet, and filler text is worse than its absence.
+].filter((detail) => detail.value.length > 0);
 
 export default function ContactPage() {
   return (

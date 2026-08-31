@@ -22,10 +22,18 @@ export async function submitContactForm(
   formData: FormData,
 ): Promise<ContactFormState> {
   const parsed = contactSchema.safeParse({
-    name: formData.get("name"),
+    firstName: formData.get("firstName"),
+    lastName: formData.get("lastName"),
     email: formData.get("email"),
+    phone: formData.get("phone"),
     vehicle: formData.get("vehicle"),
-    message: formData.get("message"),
+    year: formData.get("year"),
+    budget: formData.get("budget"),
+    transmission: formData.get("transmission"),
+    condition: formData.get("condition"),
+    requirements: formData.get("requirements"),
+    notes: formData.get("notes"),
+    referral: formData.get("referral"),
     website: formData.get("website"),
   });
 

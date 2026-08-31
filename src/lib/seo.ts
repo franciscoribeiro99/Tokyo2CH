@@ -110,10 +110,16 @@ export function organizationJsonLd(): string {
         foundingDate: String(siteConfig.foundingYear),
         email: siteConfig.contact.email,
         telephone: siteConfig.contact.phone,
-        address: {
-          "@type": "PostalAddress",
-          streetAddress: siteConfig.contact.address,
-        },
+        // Omitted entirely when unset. An empty or placeholder streetAddress is
+        // worse than no address at all: search engines index the filler.
+        ...(siteConfig.contact.address
+          ? {
+              address: {
+                "@type": "PostalAddress",
+                streetAddress: siteConfig.contact.address,
+              },
+            }
+          : {}),
         sameAs: siteConfig.social.map((link) => link.href),
       },
       {

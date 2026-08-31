@@ -18,22 +18,14 @@ export interface SocialLink {
 
 /**
  * ---------------------------------------------------------------------------
- * TODO — PLACEHOLDER CONTACT DATA, REPLACE BEFORE LAUNCH
+ * TODO — the postal address is not set.
  * ---------------------------------------------------------------------------
- * These values are carried over verbatim from the live WordPress site, where
- * they are themselves placeholders. They are wrong on purpose — copying them
- * across is a deliberate choice so nothing is silently invented.
+ * Email and phone are real. `contact.address` is deliberately empty rather
+ * than filler: the contact page and the schema.org markup both skip it when
+ * blank. Fill it in when there is a real one and it appears in both places.
  *
- *   contact.email      a personal Gmail address, not a business address
- *   contact.phone      "(+1) 23456789" is not a real, or Swiss, number
- *   contact.address    literally "Example avenue 100, example country"
- *   social Facebook    bare domain, no page
- *   social TikTok      bare domain, no profile
- *
- * `contact.instagram` is the one real handle on the live site.
- * Everything above is also emitted into schema.org Organization markup by
- * src/lib/seo.ts, so leaving it wrong has SEO consequences, not just visual
- * ones. Replace all five, then delete this block.
+ * Nothing here should claim more than the business can currently back: no
+ * testimonials, no counts, no social profiles that do not exist yet.
  * ---------------------------------------------------------------------------
  */
 export const siteConfig = {
@@ -53,11 +45,12 @@ export const siteConfig = {
   lang: "en",
 
   contact: {
-    email: "claudiosantos.hbk@gmail.com",
-    phone: "(+1) 23456789",
+    email: "contact@tokyo2ch.ch",
+    phone: "+41 78 811 83 14",
     /** `tel:` URIs may not contain spaces or parentheses. */
-    phoneHref: "tel:+123456789",
-    address: "Example avenue 100, example country",
+    phoneHref: "tel:+41788118314",
+    /** Empty until there is a real one. The UI and the JSON-LD both omit it when blank — better absent than filler. */
+    address: "",
     hours: "9am – 6pm",
   },
 
@@ -76,8 +69,6 @@ export const siteConfig = {
 
   social: [
     { label: "Instagram", href: "https://instagram.com/tokyo_2ch" },
-    { label: "Facebook", href: "https://facebook.com" },
-    { label: "TikTok", href: "https://tiktok.com" },
   ] as const satisfies readonly SocialLink[],
 
   /** Used for structured data and the OG image credit line. */

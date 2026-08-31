@@ -7,7 +7,6 @@ import { Hero } from "@/components/sections/hero";
 import { JourneyBand } from "@/components/sections/journey-band";
 import { Pillars } from "@/components/sections/pillars";
 import { Reveal } from "@/components/sections/reveal";
-import { Testimonials } from "@/components/sections/testimonials";
 import { faq as faqContent, home } from "@/config/content";
 import { media } from "@/config/media";
 import { buildMetadata } from "@/lib/seo";
@@ -69,11 +68,6 @@ export default function HomePage() {
         description={home.band.description}
         video={media.journeyVideo}
       />
-
-      <Section>
-        <SectionHeader eyebrow="Customer stories" title="What clients say" className="mb-12" />
-        <Testimonials items={home.testimonials} />
-      </Section>
 
       <Section className="border-border/60 border-t">
         <SectionHeader

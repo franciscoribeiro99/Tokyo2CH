@@ -83,10 +83,23 @@ pitfall).
   blue as `p` rises.
 - **Ridgelines**: two silhouette layers. The Fuji profile morphs into an Alpine
   profile by lerping vertex displacement on `p`.
+- **The car**: a Japanese coupé, drawn with signed distance fields, drives the
+  full width of the scene left to right along the far crest, leaning into the
+  slope and running its lamps against the dawn. Chosen over a texture or a glTF
+  model because it stays sharp at any resolution, costs no download, and needs
+  no licence — free stock has no usable CC0 JDM models. It replaced a sun that
+  occupied the same arc.
 - **Particles**: ~2500 GPU points. Colour, size and drift direction lerp from
   blossom (warm, lateral drift) to snow (white, vertical fall).
 - **Camera**: GSAP ScrollTrigger `scrub` dollies the camera; `onUpdate` writes
   `p` into the shared uniform. GSAP never touches React state.
+
+Three placement rules the car needs, each fixing a real failure seen on screen:
+its tilt is damped and clamped, because the shader's peaks are far steeper than
+any road and the true gradient stood the car on its nose; it rides the *far*
+crest, because on the near one it tracked straight through the headline; and it
+fades with crest height, so it is only ever drawn where the mountain lifts it
+clear of the type.
 
 ### Performance and accessibility budget
 

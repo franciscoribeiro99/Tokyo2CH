@@ -51,7 +51,7 @@ interface SceneProps {
   readonly progress: ProgressRef;
 }
 
-/** Fullscreen shader backdrop: sky, sun, and the morphing ridgelines. */
+/** Fullscreen shader backdrop: sky, morphing ridgelines, and the car on the crest. */
 function Backdrop({ progress }: SceneProps) {
   const material = useRef<THREE.ShaderMaterial>(null);
   const { size, viewport } = useThree();

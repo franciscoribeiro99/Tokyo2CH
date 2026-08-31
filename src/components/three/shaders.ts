@@ -3,8 +3,14 @@
  *
  * A single uniform, `uProgress` (0 → 1), drives every visual change: the sky
  * grades from a Japanese dawn to alpine daylight, the ridgeline morphs from
- * Fuji's single flared cone into a row of sharp Alpine peaks, and the drifting
- * particles turn from blossom into snow.
+ * Fuji's single flared cone into a row of sharp Alpine peaks, the drifting
+ * particles turn from blossom into snow, and a Japanese coupé drives the whole
+ * width of the scene — left to right, so the motion reads as progress.
+ *
+ * The car replaces what used to be a sun on the same arc. It is drawn with
+ * signed distance fields rather than a texture or a glTF model: it stays sharp
+ * at any resolution, costs no download, and needs no licence — which matters
+ * here, because free stock has no usable CC0 JDM models.
  *
  * Colour management note: the canvas disables tone mapping and uses a linear
  * output space, so the values written here are exactly what is displayed. No
@@ -64,6 +70,40 @@ float ridgeHeight(float x, float p, float scale, float lift) {
   return lift + scale * mix(fujiProfile(x), alpsProfile(x), p);
 }
 
+float sdRoundBox(vec2 p, vec2 b, float r) {
+  vec2 d = abs(p) - b + r;
+  return min(max(d.x, d.y), 0.0) + length(max(d, 0.0)) - r;
+}
+
+float sdCircle(vec2 p, float r) {
+  return length(p) - r;
+}
+
+/** Blends two shapes into one continuous surface instead of a hard seam. */
+float smoothUnion(float a, float b, float k) {
+  float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+  return mix(b, a, h) - k * h * (1.0 - h);
+}
+
+/**
+ * Profile of a Japanese coupé, facing right, one unit long, wheels on y = 0.
+ *
+ * The long bonnet and the cabin set back over the rear axle are what make the
+ * silhouette read as a 90s JDM coupé rather than a generic car. The roofline
+ * comes from blending the cabin into the body, not from drawing it — a hard
+ * union here gives an obvious notch where the two boxes meet.
+ */
+float carProfile(vec2 p) {
+  float body = sdRoundBox(p - vec2(0.0, 0.145), vec2(0.500, 0.088), 0.052);
+  float cabin = sdRoundBox(p - vec2(-0.045, 0.250), vec2(0.235, 0.082), 0.075);
+  float shell = smoothUnion(body, cabin, 0.085);
+
+  float frontWheel = sdCircle(p - vec2(0.295, 0.078), 0.082);
+  float rearWheel = sdCircle(p - vec2(-0.300, 0.078), 0.082);
+
+  return min(shell, min(frontWheel, rearWheel));
+}
+
 void main() {
   vec2 uv = vUv;
   float p = uProgress;
@@ -77,13 +117,11 @@ void main() {
   vec3 col = mix(low, mid, smoothstep(0.0, 0.55, uv.y));
   col = mix(col, top, smoothstep(0.45, 1.0, uv.y));
 
-  // --- sun: a low red disc at dawn, a high pale one over the Alps ----------
-  vec2 sunPos = vec2(mix(0.76, 0.60, p), mix(0.46, 0.78, p));
-  float sunDist = distance(vec2(uv.x * aspect, uv.y), vec2(sunPos.x * aspect, sunPos.y));
-  float disc = smoothstep(0.058, 0.046, sunDist);
-  float glow = exp(-sunDist * 6.0);
-  vec3 sunCol = mix(vec3(1.0, 0.52, 0.24), vec3(1.0, 0.98, 0.94), p);
-  col += sunCol * (disc * 0.85 + glow * mix(0.60, 0.22, p));
+  // --- light: a glow, with no disc. Only one thing gets to be the subject. --
+  vec2 lightPos = vec2(mix(0.74, 0.58, p), mix(0.44, 0.74, p));
+  float lightDist = distance(vec2(uv.x * aspect, uv.y), vec2(lightPos.x * aspect, lightPos.y));
+  vec3 lightCol = mix(vec3(1.0, 0.52, 0.24), vec3(1.0, 0.98, 0.94), p);
+  col += lightCol * exp(-lightDist * 5.0) * mix(0.46, 0.17, p);
 
   // --- ridgelines ----------------------------------------------------------
   float horizon = 0.30;
@@ -104,7 +142,57 @@ void main() {
   farCol = mix(farCol, vec3(0.93, 0.95, 0.98), clamp(cap, 0.0, 1.0) * 0.85);
 
   col = mix(col, farCol, farMask);
+
   col = mix(col, nearCol, nearMask);
+
+  // --- the car -------------------------------------------------------------
+  // It rides the far crest, which is the highest line in the scene. Two
+  // earlier placements failed: behind the near ridge it was hidden for most of
+  // the scroll, and on the near crest it tracked straight through the headline.
+  // Up here it stays clear of the type and reads as a silhouette against the
+  // sky for the whole journey.
+  float carScale = 0.160;
+  float carU = mix(-0.16, 1.16, p);
+  float carX = carU * aspect;
+
+  // Sample the same ridge the far crest is drawn from, so the wheels sit on it.
+  float carY = ridgeHeight(carU, p, 1.0, horizon);
+
+  // Tilt into the slope, measured from the crest either side of the car.
+  float slopeL = ridgeHeight(carU - 0.012, p, 1.0, horizon);
+  float slopeR = ridgeHeight(carU + 0.012, p, 1.0, horizon);
+  // Damped and clamped on purpose: these peaks are far steeper than any road,
+  // and taking the gradient literally stood the car on its nose near a summit.
+  // A hint of lean reads as "climbing"; the true angle reads as broken.
+  float angle = clamp(atan((slopeR - slopeL) / (0.024 * aspect)) * 0.32, -0.28, 0.28);
+
+  vec2 rel = vec2(uv.x * aspect, uv.y) - vec2(carX, carY);
+  float ca = cos(angle);
+  float sa = sin(angle);
+  vec2 carLocal = vec2(rel.x * ca + rel.y * sa, -rel.x * sa + rel.y * ca) / carScale;
+
+  // Visible only where the ridge lifts it clear of the headline. At the edges
+  // of the scene the crest drops into the type, so the car climbs out of the
+  // haze as the mountain rises and dissolves back into it on the way down —
+  // which also keeps it from ever competing with the copy for attention.
+  float carFade = smoothstep(horizon + 0.055, horizon + 0.145, carY);
+
+  float carDist = carProfile(carLocal);
+  float carAa = 2.5 / (uResolution.y * carScale);
+  float carMask = smoothstep(carAa, -carAa, carDist) * carFade;
+
+  vec3 carCol = mix(vec3(0.04, 0.03, 0.05), vec3(0.13, 0.16, 0.23), p);
+  // Rim light along the roof, taking its colour from whatever the sky is doing.
+  float rim = smoothstep(0.26, 0.34, carLocal.y) * smoothstep(0.50, 0.42, abs(carLocal.x));
+  carCol = mix(carCol, mix(vec3(1.0, 0.62, 0.34), vec3(0.86, 0.92, 1.0), p), rim * 0.60);
+  col = mix(col, carCol, carMask);
+
+  // Lamps: lit against the dawn, washed out by alpine daylight.
+  float lamps = mix(1.0, 0.22, p) * carFade;
+  float head = exp(-length((carLocal - vec2(0.470, 0.165)) * vec2(1.0, 1.6)) * 13.0);
+  float tail = exp(-length((carLocal + vec2(0.478, -0.190)) * vec2(1.0, 1.6)) * 15.0);
+  col += vec3(1.00, 0.93, 0.78) * head * 0.90 * lamps;
+  col += vec3(1.00, 0.22, 0.12) * tail * 0.70 * lamps;
 
   // --- atmosphere ----------------------------------------------------------
   vec3 haze = mix(vec3(0.88, 0.52, 0.32), vec3(0.88, 0.93, 0.97), p);

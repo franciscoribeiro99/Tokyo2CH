@@ -1,0 +1,54 @@
+"use client";
+
+import { Monitor, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const THEMES = [
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark", label: "Dark", icon: Moon },
+  { value: "system", label: "System", icon: Monitor },
+] as const;
+
+export function ThemeToggle() {
+  const { setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // The server cannot know the resolved theme, so rendering the real icon
+  // before hydration guarantees a mismatch. Render a stable placeholder first.
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) {
+    return (
+      <Button variant="ghost" size="icon" aria-label="Toggle theme" disabled>
+        <Sun className="size-4" />
+      </Button>
+    );
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label="Toggle theme">
+          <Sun className="size-4 dark:hidden" />
+          <Moon className="hidden size-4 dark:block" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {THEMES.map(({ value, label, icon: Icon }) => (
+          <DropdownMenuItem key={value} onClick={() => setTheme(value)}>
+            <Icon className="size-4" />
+            {label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}

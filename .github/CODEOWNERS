@@ -1,0 +1,11 @@
+# Every PR needs a review from the default owner.
+# Replace with your team handle, e.g. @your-org/web-platform.
+*                       @franciscoribeiro99
+
+# Changes to the quality gates and deployment surface deserve extra scrutiny.
+/.github/               @franciscoribeiro99
+/biome.json             @franciscoribeiro99
+/tsconfig.json          @franciscoribeiro99
+/next.config.ts         @franciscoribeiro99
+/playwright.config.ts   @franciscoribeiro99
+/vitest.config.mts      @franciscoribeiro99

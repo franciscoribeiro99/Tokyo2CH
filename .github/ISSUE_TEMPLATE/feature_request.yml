@@ -1,0 +1,35 @@
+name: Feature request
+description: Propose a change or addition
+labels: ["enhancement", "triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you solving?
+      description: Describe the situation, not the solution. Who is blocked, and by what?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What do you propose?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What else did you consider?
+      description: Including "do nothing" — say why it is not good enough.
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Rough size
+      options:
+        - Small — a single component or page
+        - Medium — a new route or shared behaviour
+        - Large — architectural, needs a design discussion
+    validations:
+      required: true

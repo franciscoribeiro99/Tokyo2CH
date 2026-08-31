@@ -1,0 +1,33 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      # One PR per ecosystem instead of a dozen — far easier to review and revert.
+      react:
+        patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]
+      next:
+        patterns: ["next", "@next/*", "eslint-config-next"]
+      tailwind:
+        patterns: ["tailwindcss", "@tailwindcss/*"]
+      testing:
+        patterns: ["vitest", "@vitest/*", "@testing-library/*", "@playwright/test", "jsdom"]
+      tooling:
+        patterns: ["@biomejs/*", "husky", "lint-staged", "@commitlint/*", "typescript"]
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: ci

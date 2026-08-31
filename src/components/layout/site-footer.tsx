@@ -10,16 +10,24 @@ export function SiteFooter() {
       <Container>
         <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-sm space-y-3">
-            <p className="font-semibold tracking-tight">{siteConfig.name}</p>
+            <p className="font-bold font-display tracking-tight">{siteConfig.name}</p>
             <p className="text-pretty text-muted-foreground text-sm leading-relaxed">
               {siteConfig.tagline}
             </p>
-            <a
-              href={`mailto:${siteConfig.contact.email}`}
-              className="inline-block rounded-sm text-muted-foreground text-sm underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {siteConfig.contact.email}
-            </a>
+            <div className="flex flex-col gap-1">
+              <a
+                href={`mailto:${siteConfig.contact.email}`}
+                className="inline-block rounded-sm text-muted-foreground text-sm underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {siteConfig.contact.email}
+              </a>
+              <a
+                href={siteConfig.contact.phoneHref}
+                className="inline-block rounded-sm text-muted-foreground text-sm underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {siteConfig.contact.phone}
+              </a>
+            </div>
           </div>
 
           <div className="flex gap-12">

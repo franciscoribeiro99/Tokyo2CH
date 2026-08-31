@@ -24,7 +24,7 @@ export async function submitContactForm(
   const parsed = contactSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
-    company: formData.get("company"),
+    vehicle: formData.get("vehicle"),
     message: formData.get("message"),
     website: formData.get("website"),
   });

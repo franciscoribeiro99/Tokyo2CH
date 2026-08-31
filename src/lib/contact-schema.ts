@@ -10,7 +10,8 @@ import { z } from "zod";
 export const contactSchema = z.object({
   name: z.string().trim().min(2, "Please enter your name.").max(100, "That name is too long."),
   email: z.email("Please enter a valid email address.").max(320),
-  company: z.string().trim().max(120).optional().or(z.literal("")),
+  /** Free text: the model, spec, or budget the enquiry is about. Optional. */
+  vehicle: z.string().trim().max(120).optional().or(z.literal("")),
   message: z
     .string()
     .trim()

@@ -5,11 +5,11 @@ test.describe("navigation", () => {
     await page.goto("/");
 
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(page.getByRole("link", { name: /start a project/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /start sourcing/i }).first()).toBeVisible();
   });
 
   test("every main nav destination resolves", async ({ page }) => {
-    for (const path of ["/services", "/about", "/contact"]) {
+    for (const path of ["/vehicles", "/how-it-works", "/our-services", "/faq", "/contact"]) {
       const response = await page.goto(path);
       expect(response?.status(), `${path} should return 200`).toBe(200);
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
@@ -20,11 +20,14 @@ test.describe("navigation", () => {
     // The desktop nav is `hidden md:flex`, so force a wide viewport regardless
     // of which project this runs under.
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto("/about");
+    await page.goto("/vehicles");
 
     const nav = page.getByRole("navigation", { name: "Main" });
-    await expect(nav.getByRole("link", { name: "About" })).toHaveAttribute("aria-current", "page");
-    await expect(nav.getByRole("link", { name: "Services" })).not.toHaveAttribute(
+    await expect(nav.getByRole("link", { name: "Vehicles" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await expect(nav.getByRole("link", { name: "Our Services" })).not.toHaveAttribute(
       "aria-current",
       "page",
     );
@@ -32,19 +35,19 @@ test.describe("navigation", () => {
 
   test("mobile menu opens, marks the current route, and navigates", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/about");
+    await page.goto("/vehicles");
 
     await page.getByRole("button", { name: /open menu/i }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
 
-    await expect(dialog.getByRole("link", { name: "About" })).toHaveAttribute(
+    await expect(dialog.getByRole("link", { name: "Vehicles" })).toHaveAttribute(
       "aria-current",
       "page",
     );
 
-    await dialog.getByRole("link", { name: "Services" }).click();
-    await expect(page).toHaveURL(/\/services$/);
+    await dialog.getByRole("link", { name: "Our Services" }).click();
+    await expect(page).toHaveURL(/\/our-services$/);
   });
 
   test("unknown routes return a 404 page, not a crash", async ({ page }) => {

@@ -4,8 +4,8 @@ import { contactSchema, toFieldErrors } from "@/lib/contact-schema";
 const valid = {
   name: "Ada Lovelace",
   email: "ada@example.com",
-  company: "Analytical Engines",
-  message: "We need help shipping a new analytics surface before Q3. Can you take a look?",
+  vehicle: "R34 GT-R, manual, under CHF 60k",
+  message: "Looking for a clean manual R34 GT-R, budget around CHF 60k. What is findable?",
   website: "",
 } as const;
 
@@ -21,9 +21,9 @@ describe("contactSchema", () => {
     if (result.success) expect(result.data.name).toBe("Ada Lovelace");
   });
 
-  it("treats company as optional", () => {
-    const { company: _company, ...withoutCompany } = valid;
-    expect(contactSchema.safeParse(withoutCompany).success).toBe(true);
+  it("treats the vehicle field as optional", () => {
+    const { vehicle: _vehicle, ...withoutVehicle } = valid;
+    expect(contactSchema.safeParse(withoutVehicle).success).toBe(true);
   });
 
   it.each([

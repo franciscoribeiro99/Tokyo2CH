@@ -15,7 +15,10 @@ export function getSiteUrl(): string {
   const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
   if (vercelUrl) return `https://${vercelUrl}`;
 
-  return siteConfig.url;
+  // siteConfig.url is hand-edited per project, so it gets the same trailing
+  // slash treatment the env var already received in src/lib/env.ts. Without it
+  // a value like "https://acme.com/" yields canonicals such as "//about".
+  return siteConfig.url.replace(/\/+$/, "");
 }
 
 export function absoluteUrl(path: string): string {

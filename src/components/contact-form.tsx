@@ -13,9 +13,11 @@ import { initialContactState } from "@/lib/contact-schema";
 function SubmitButton() {
   const { pending } = useFormStatus();
 
+  // `w-auto` alone cannot shrink the button: the form is a flex column, whose
+  // default `align-items: stretch` wins. Alignment is what needs changing.
   return (
-    <Button type="submit" size="lg" disabled={pending} className="w-full sm:w-auto">
-      {pending ? "Sending…" : "Send message"}
+    <Button type="submit" size="lg" disabled={pending} className="w-full sm:w-auto sm:self-start">
+      {pending ? "Sending…" : "Send enquiry"}
     </Button>
   );
 }
@@ -43,7 +45,7 @@ export function ContactForm() {
   const ids = {
     name: `${baseId}-name`,
     email: `${baseId}-email`,
-    company: `${baseId}-company`,
+    vehicle: `${baseId}-vehicle`,
     message: `${baseId}-message`,
   };
 
@@ -100,13 +102,18 @@ export function ContactForm() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor={ids.company}>Company</Label>
-        <Input id={ids.company} name="company" autoComplete="organization" />
+        <Label htmlFor={ids.vehicle}>Vehicle you have in mind</Label>
+        <Input
+          id={ids.vehicle}
+          name="vehicle"
+          autoComplete="off"
+          placeholder="e.g. R34 GT-R, manual, under CHF 60k"
+        />
       </div>
 
       <div className="flex flex-col gap-2">
         <Label htmlFor={ids.message}>
-          How can we help? <span className="text-destructive">*</span>
+          What are you looking for? <span className="text-destructive">*</span>
         </Label>
         <Textarea
           id={ids.message}

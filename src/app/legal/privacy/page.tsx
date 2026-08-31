@@ -26,9 +26,9 @@ export default function PrivacyPage() {
 
         <h2>What we collect</h2>
         <p>
-          When you submit the contact form we collect the name, email address, company, and message
-          you provide. We collect aggregate, non-identifying usage analytics to understand how the
-          site performs.
+          When you submit the contact form we collect the name, email address, vehicle of interest,
+          and message you provide. We collect aggregate, non-identifying usage analytics to
+          understand how the site performs.
         </p>
 
         <h2>Why we collect it</h2>

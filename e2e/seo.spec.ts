@@ -2,11 +2,11 @@ import { expect, test } from "@playwright/test";
 
 test.describe("seo surface", () => {
   test("pages carry a title, description, and self-referencing canonical", async ({ page }) => {
-    await page.goto("/about");
+    await page.goto("/vehicles");
 
-    await expect(page).toHaveTitle(/About/);
+    await expect(page).toHaveTitle(/Vehicles/);
     await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /.+/);
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/about$/);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/vehicles$/);
   });
 
   test("open graph and twitter tags are present", async ({ page }) => {
@@ -39,7 +39,7 @@ test.describe("seo surface", () => {
 
     expect(response.status()).toBe(200);
     const body = await response.text();
-    for (const path of ["/services", "/about", "/contact"]) {
+    for (const path of ["/vehicles", "/how-it-works", "/our-services", "/faq", "/contact"]) {
       expect(body).toContain(path);
     }
   });

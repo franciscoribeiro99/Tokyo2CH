@@ -1,8 +1,8 @@
 /**
  * Single source of truth for everything brand-specific.
  *
- * When you use this template for a new company site, this is the first file
- * you edit — and for a basic site it may be the only one.
+ * Per AGENTS.md, brand copy lives here and nowhere else — no component should
+ * hardcode the company name, email, or URL.
  */
 
 export interface NavItem {
@@ -16,31 +16,56 @@ export interface SocialLink {
   readonly href: string;
 }
 
+/**
+ * ---------------------------------------------------------------------------
+ * TODO — PLACEHOLDER CONTACT DATA, REPLACE BEFORE LAUNCH
+ * ---------------------------------------------------------------------------
+ * These values are carried over verbatim from the live WordPress site, where
+ * they are themselves placeholders. They are wrong on purpose — copying them
+ * across is a deliberate choice so nothing is silently invented.
+ *
+ *   contact.email      a personal Gmail address, not a business address
+ *   contact.phone      "(+1) 23456789" is not a real, or Swiss, number
+ *   contact.address    literally "Example avenue 100, example country"
+ *   social Facebook    bare domain, no page
+ *   social TikTok      bare domain, no profile
+ *
+ * `contact.instagram` is the one real handle on the live site.
+ * Everything above is also emitted into schema.org Organization markup by
+ * src/lib/seo.ts, so leaving it wrong has SEO consequences, not just visual
+ * ones. Replace all five, then delete this block.
+ * ---------------------------------------------------------------------------
+ */
 export const siteConfig = {
-  name: "Acme Inc.",
-  shortName: "Acme",
-  tagline: "Software that ships.",
+  name: "Tokyo2CH",
+  shortName: "Tokyo2CH",
+  tagline: "Your Japanese vehicle, brought to Switzerland.",
   description:
-    "Acme builds reliable software for teams that care about craft. Strategy, design, and engineering under one roof.",
+    "Tokyo2CH sources and imports Japanese vehicles to Switzerland on demand, guiding clients through selection, shipping, regulations, and registration.",
 
   /**
    * Canonical, absolute, no trailing slash.
    * Overridden per-environment by NEXT_PUBLIC_SITE_URL — see src/lib/env.ts.
    */
-  url: "https://example.com",
+  url: "https://tokyo2ch.ch",
 
-  locale: "en_US",
+  locale: "en_CH",
   lang: "en",
 
   contact: {
-    email: "hello@example.com",
-    phone: "+1 (555) 010-0000",
-    address: "1 Example Street, Lisbon, Portugal",
+    email: "claudiosantos.hbk@gmail.com",
+    phone: "(+1) 23456789",
+    /** `tel:` URIs may not contain spaces or parentheses. */
+    phoneHref: "tel:+123456789",
+    address: "Example avenue 100, example country",
+    hours: "9am – 6pm",
   },
 
   mainNav: [
-    { title: "Services", href: "/services" },
-    { title: "About", href: "/about" },
+    { title: "Vehicles", href: "/vehicles" },
+    { title: "How It Works", href: "/how-it-works" },
+    { title: "Our Services", href: "/our-services" },
+    { title: "FAQ", href: "/faq" },
     { title: "Contact", href: "/contact" },
   ] as const satisfies readonly NavItem[],
 
@@ -50,13 +75,14 @@ export const siteConfig = {
   ] as const satisfies readonly NavItem[],
 
   social: [
-    { label: "GitHub", href: "https://github.com/acme" },
-    { label: "LinkedIn", href: "https://linkedin.com/company/acme" },
+    { label: "Instagram", href: "https://instagram.com/tokyo_2ch" },
+    { label: "Facebook", href: "https://facebook.com" },
+    { label: "TikTok", href: "https://tiktok.com" },
   ] as const satisfies readonly SocialLink[],
 
   /** Used for structured data and the OG image credit line. */
-  legalName: "Acme Incorporated",
-  foundingYear: 2020,
+  legalName: "Tokyo2CH",
+  foundingYear: 2026,
 } as const;
 
 export type SiteConfig = typeof siteConfig;

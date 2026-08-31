@@ -1,6 +1,15 @@
 import { expect, test } from "@playwright/test";
 
-const ROUTES = ["/", "/services", "/about", "/contact", "/legal/privacy"] as const;
+const ROUTES = [
+  "/",
+  "/vehicles",
+  "/how-it-works",
+  "/our-services",
+  "/faq",
+  "/contact",
+  "/legal/privacy",
+  "/legal/terms",
+] as const;
 
 test.describe("accessibility fundamentals", () => {
   for (const route of ROUTES) {

@@ -13,7 +13,7 @@ export function SiteHeader() {
         <div className="flex h-16 items-center justify-between gap-4">
           <Link
             href="/"
-            className="rounded-sm font-semibold text-lg tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="rounded-sm font-bold font-display text-lg tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             {siteConfig.name}
           </Link>
@@ -29,7 +29,7 @@ export function SiteHeader() {
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Button asChild size="sm" className="hidden md:inline-flex">
-              <Link href="/contact">Get in touch</Link>
+              <Link href="/contact">Start sourcing</Link>
             </Button>
             <MobileNav />
           </div>

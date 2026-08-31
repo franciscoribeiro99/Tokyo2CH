@@ -1,7 +1,7 @@
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Zen_Kaku_Gothic_New } from "next/font/google";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SkipLink } from "@/components/layout/skip-link";
@@ -23,6 +23,21 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+/**
+ * Display face. Chosen because it carries latin and kana in one family, so the
+ * Japanese accents in the copy are set in the same voice as the headlines
+ * rather than falling back to whatever the OS supplies.
+ *
+ * Only the two weights actually used are requested — this family has no
+ * variable version, so every extra weight is another font file over the wire.
+ */
+const zenKaku = Zen_Kaku_Gothic_New({
+  variable: "--font-zen-display",
+  subsets: ["latin"],
+  weight: ["500", "700"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   // metadataBase makes every relative OG/twitter image URL resolve correctly.
   metadataBase: new URL(getSiteUrl()),
@@ -39,8 +54,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: "(prefers-color-scheme: light)", color: "#fbfaf7" },
+    { media: "(prefers-color-scheme: dark)", color: "#0e1116" },
   ],
   colorScheme: "light dark",
 };
@@ -55,7 +70,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       // Next.js 16 stopped auto-overriding a global `scroll-behavior: smooth`
       // during route transitions; opt back in to the instant scroll-to-top.
       data-scroll-behavior="smooth"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${zenKaku.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         <ThemeProvider

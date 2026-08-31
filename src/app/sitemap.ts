@@ -9,8 +9,10 @@ import { getSiteUrl } from "@/lib/seo";
  */
 const ROUTES = [
   { path: "/", changeFrequency: "weekly", priority: 1 },
-  { path: "/services", changeFrequency: "monthly", priority: 0.9 },
-  { path: "/about", changeFrequency: "monthly", priority: 0.8 },
+  { path: "/vehicles", changeFrequency: "weekly", priority: 0.9 },
+  { path: "/our-services", changeFrequency: "monthly", priority: 0.9 },
+  { path: "/how-it-works", changeFrequency: "monthly", priority: 0.8 },
+  { path: "/faq", changeFrequency: "monthly", priority: 0.7 },
   { path: "/contact", changeFrequency: "yearly", priority: 0.7 },
   { path: "/legal/privacy", changeFrequency: "yearly", priority: 0.2 },
   { path: "/legal/terms", changeFrequency: "yearly", priority: 0.2 },

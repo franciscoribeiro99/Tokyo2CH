@@ -16,18 +16,6 @@ export interface SocialLink {
   readonly href: string;
 }
 
-/**
- * ---------------------------------------------------------------------------
- * TODO — the postal address is not set.
- * ---------------------------------------------------------------------------
- * Email and phone are real. `contact.address` is deliberately empty rather
- * than filler: the contact page and the schema.org markup both skip it when
- * blank. Fill it in when there is a real one and it appears in both places.
- *
- * Nothing here should claim more than the business can currently back: no
- * testimonials, no counts, no social profiles that do not exist yet.
- * ---------------------------------------------------------------------------
- */
 export const siteConfig = {
   name: "Tokyo2CH",
   shortName: "Tokyo2CH",
@@ -49,8 +37,21 @@ export const siteConfig = {
     phone: "+41 78 811 83 14",
     /** `tel:` URIs may not contain spaces or parentheses. */
     phoneHref: "tel:+41788118314",
-    /** Empty until there is a real one. The UI and the JSON-LD both omit it when blank — better absent than filler. */
-    address: "",
+    /**
+     * Shown on the contact page. Region-level on purpose: there is no public
+     * office to publish, and a region is honest where a fabricated street
+     * address would not be.
+     */
+    address: "Valais, Switzerland",
+    /**
+     * The same location, structured for schema.org. Kept separate from the
+     * display string because "Valais, Switzerland" is a region and a country,
+     * not a streetAddress — putting it in the wrong field is how search
+     * engines end up with a business at a street that does not exist.
+     */
+    addressRegion: "Valais",
+    /** ISO 3166-1 alpha-2, which is what schema.org expects. */
+    addressCountry: "CH",
     hours: "9am – 6pm",
   },
 

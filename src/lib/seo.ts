@@ -110,16 +110,14 @@ export function organizationJsonLd(): string {
         foundingDate: String(siteConfig.foundingYear),
         email: siteConfig.contact.email,
         telephone: siteConfig.contact.phone,
-        // Omitted entirely when unset. An empty or placeholder streetAddress is
-        // worse than no address at all: search engines index the filler.
-        ...(siteConfig.contact.address
-          ? {
-              address: {
-                "@type": "PostalAddress",
-                streetAddress: siteConfig.contact.address,
-              },
-            }
-          : {}),
+        // Region and country only — there is no public street address, and
+        // claiming one in `streetAddress` would put the business at a location
+        // that does not exist.
+        address: {
+          "@type": "PostalAddress",
+          addressRegion: siteConfig.contact.addressRegion,
+          addressCountry: siteConfig.contact.addressCountry,
+        },
         sameAs: siteConfig.social.map((link) => link.href),
       },
       {

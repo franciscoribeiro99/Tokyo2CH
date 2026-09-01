@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/brand/logo";
 import { Container } from "@/components/layout/container";
 import { siteConfig } from "@/config/site";
 
@@ -10,7 +11,11 @@ export function SiteFooter() {
       <Container>
         <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-sm space-y-3">
-            <p className="font-bold font-display tracking-tight">{siteConfig.name}</p>
+            <p>
+              {/* The mark is decorative; this text is what gets announced. */}
+              <span className="sr-only">{siteConfig.name}</span>
+              <Logo className="h-6" />
+            </p>
             <p className="text-pretty text-muted-foreground text-sm leading-relaxed">
               {siteConfig.tagline}
             </p>

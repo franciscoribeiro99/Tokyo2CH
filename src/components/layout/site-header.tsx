@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/brand/logo";
 import { Container } from "@/components/layout/container";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -13,9 +14,11 @@ export function SiteHeader() {
         <div className="flex h-16 items-center justify-between gap-4">
           <Link
             href="/"
-            className="rounded-sm font-bold font-display text-lg tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
-            {siteConfig.name}
+            {/* The mark is decorative; this text is what gets announced. */}
+            <span className="sr-only">{siteConfig.name}</span>
+            <Logo className="h-7" />
           </Link>
 
           <nav aria-label="Main" className="hidden items-center gap-1 md:flex">

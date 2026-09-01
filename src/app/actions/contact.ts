@@ -1,9 +1,11 @@
 "use server";
 
+import { DEFAULT_LOCALE, isLocale } from "@/config/i18n";
+import { getDictionaryFor } from "@/content/dictionaries";
 import {
   type ContactFormState,
   type ContactInput,
-  contactSchema,
+  makeContactSchema,
   toFieldErrors,
 } from "@/lib/contact-schema";
 
@@ -21,6 +23,17 @@ export async function submitContactForm(
   _prevState: ContactFormState,
   formData: FormData,
 ): Promise<ContactFormState> {
+  /**
+   * The locale rides along in a hidden field so the reply comes back in the
+   * language the visitor was reading. It is validated against the known set
+   * before use — it only selects a message catalogue, but an unchecked value
+   * from the client has no business indexing anything.
+   */
+  const submitted = formData.get("locale");
+  const locale = typeof submitted === "string" && isLocale(submitted) ? submitted : DEFAULT_LOCALE;
+  const copy = getDictionaryFor(locale).form;
+  const contactSchema = makeContactSchema(copy.errors);
+
   const parsed = contactSchema.safeParse({
     firstName: formData.get("firstName"),
     lastName: formData.get("lastName"),
@@ -43,26 +56,19 @@ export async function submitContactForm(
     // A tripped honeypot means a bot. Return the normal success shape so the
     // bot learns nothing, but deliver nothing.
     if (fieldErrors.website) {
-      return { status: "success", message: "Thanks — we'll be in touch shortly." };
+      return { status: "success", message: copy.success };
     }
 
-    return {
-      status: "error",
-      message: "Please fix the highlighted fields and try again.",
-      fieldErrors,
-    };
+    return { status: "error", message: copy.errors.fix, fieldErrors };
   }
 
   try {
     await deliver(parsed.data);
-    return { status: "success", message: "Thanks — we'll be in touch shortly." };
+    return { status: "success", message: copy.success };
   } catch (error) {
     // Log detail server-side; never leak internals to the browser.
     console.error("[contact] delivery failed", error);
-    return {
-      status: "error",
-      message: "Something went wrong on our end. Please email us directly.",
-    };
+    return { status: "error", message: copy.errors.failed };
   }
 }
 

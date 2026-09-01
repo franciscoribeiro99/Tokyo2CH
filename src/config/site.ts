@@ -5,10 +5,16 @@
  * hardcode the company name, email, or URL.
  */
 
+/**
+ * A navigation entry.
+ *
+ * `key` looks the label up in the current dictionary; `href` is the path
+ * without a locale prefix, which `localePath` adds at render time. Storing the
+ * English label here is what would make the nav monolingual.
+ */
 export interface NavItem {
-  readonly title: string;
+  readonly key: "vehicles" | "howItWorks" | "ourServices" | "faq" | "contact" | "privacy" | "terms";
   readonly href: string;
-  readonly description?: string;
 }
 
 export interface SocialLink {
@@ -56,16 +62,16 @@ export const siteConfig = {
   },
 
   mainNav: [
-    { title: "Vehicles", href: "/vehicles" },
-    { title: "How It Works", href: "/how-it-works" },
-    { title: "Our Services", href: "/our-services" },
-    { title: "FAQ", href: "/faq" },
-    { title: "Contact", href: "/contact" },
+    { key: "vehicles", href: "/vehicles" },
+    { key: "howItWorks", href: "/how-it-works" },
+    { key: "ourServices", href: "/our-services" },
+    { key: "faq", href: "/faq" },
+    { key: "contact", href: "/contact" },
   ] as const satisfies readonly NavItem[],
 
   footerNav: [
-    { title: "Privacy", href: "/legal/privacy" },
-    { title: "Terms", href: "/legal/terms" },
+    { key: "privacy", href: "/legal/privacy" },
+    { key: "terms", href: "/legal/terms" },
   ] as const satisfies readonly NavItem[],
 
   social: [

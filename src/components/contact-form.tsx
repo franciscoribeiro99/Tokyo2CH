@@ -8,9 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { contactForm, type SelectOption } from "@/config/content";
+import type { Locale } from "@/config/i18n";
+import type { Dictionary } from "@/content/fr";
 import { type ContactFieldErrors, initialContactState } from "@/lib/contact-schema";
 import { cn } from "@/lib/utils";
+
+type FormCopy = Dictionary["form"];
 
 /** Marks a field as required for sighted users and screen readers alike. */
 function RequiredMark() {
@@ -21,22 +24,19 @@ function RequiredMark() {
   );
 }
 
-function SubmitButton() {
+function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: string }) {
   const { pending } = useFormStatus();
 
+  // `w-auto` alone cannot shrink the button: the form is a flex column, whose
+  // default `align-items: stretch` wins. Alignment is what needs changing.
   return (
     <Button type="submit" size="lg" disabled={pending} className="w-full sm:w-auto sm:self-start">
-      {pending ? "Sending…" : "Request a vehicle"}
+      {pending ? pendingLabel : label}
     </Button>
   );
 }
 
-interface FieldErrorProps {
-  readonly id: string;
-  readonly errors?: readonly string[];
-}
-
-function FieldError({ id, errors }: FieldErrorProps) {
+function FieldError({ id, errors }: { id: string; errors?: readonly string[] }) {
   if (!errors?.length) return null;
 
   return (
@@ -49,8 +49,8 @@ function FieldError({ id, errors }: FieldErrorProps) {
 interface NativeSelectProps {
   readonly id: string;
   readonly name: string;
-  readonly options: readonly SelectOption[];
-  readonly defaultValue?: string;
+  readonly options: readonly { readonly value: string; readonly label: string }[];
+  readonly placeholder: string;
   readonly invalid?: boolean;
   readonly describedBy?: string;
   readonly required?: boolean;
@@ -68,7 +68,7 @@ function NativeSelect({
   id,
   name,
   options,
-  defaultValue = "",
+  placeholder,
   invalid,
   describedBy,
   required,
@@ -77,16 +77,27 @@ function NativeSelect({
     <select
       id={id}
       name={name}
-      defaultValue={defaultValue}
+      defaultValue=""
       required={required}
       aria-invalid={invalid}
       aria-describedby={describedBy}
       className={cn(
-        "h-8 w-full min-w-0 appearance-none rounded-lg border border-input bg-[length:0.7rem] bg-[position:right_0.7rem_center] bg-transparent bg-no-repeat px-2.5 py-1 pr-8 text-base outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30",
-        "xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22 fill=%22none%22 stroke=%22%23888%22 d=%22M3 6l5 5 5-5%22/%3E%3C/svg%3E')] bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg stroke-width=%222%22%3E%3Cpath",
+        "h-8 w-full min-w-0 appearance-none rounded-lg border border-input bg-transparent bg-no-repeat px-2.5 py-1 pr-8 text-base outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30",
       )}
+      /**
+       * The chevron lives here, not in a Tailwind arbitrary value.
+       * The class sorter reorders whitespace-separated tokens, and a data URI
+       * contains spaces — it shredded the SVG into unusable fragments. An
+       * inline style is not something the formatter will rewrite.
+       */
+      style={{
+        backgroundImage:
+          "url(\"data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M3 6l5 5 5-5'/%3E%3C/svg%3E\")",
+        backgroundSize: "0.7rem",
+        backgroundPosition: "right 0.7rem center",
+      }}
     >
-      <option value="">— Select Choice —</option>
+      <option value="">{placeholder}</option>
       {options.map((option) => (
         <option key={option.value} value={option.value}>
           {option.label}
@@ -96,7 +107,12 @@ function NativeSelect({
   );
 }
 
-export function ContactForm() {
+interface ContactFormProps {
+  readonly locale: Locale;
+  readonly copy: FormCopy;
+}
+
+export function ContactForm({ locale, copy }: ContactFormProps) {
   const [state, formAction] = useActionState(submitContactForm, initialContactState);
   const formRef = useRef<HTMLFormElement>(null);
   const baseId = useId();
@@ -109,12 +125,12 @@ export function ContactForm() {
 
   useEffect(() => {
     if (state.status === "success") {
-      toast.success(state.message ?? "Request sent.");
+      toast.success(state.message ?? copy.success);
       formRef.current?.reset();
     } else if (state.status === "error" && !state.fieldErrors) {
-      toast.error(state.message ?? "Something went wrong.");
+      toast.error(state.message ?? copy.errors.failed);
     }
-  }, [state]);
+  }, [state, copy]);
 
   return (
     <form ref={formRef} action={formAction} className="flex flex-col gap-6" noValidate>
@@ -129,7 +145,7 @@ export function ContactForm() {
       {/* Name is one question asked in two boxes, so it is one group. */}
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-2 font-medium text-sm">
-          Your name <RequiredMark />
+          {copy.name} <RequiredMark />
         </legend>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -143,7 +159,7 @@ export function ContactForm() {
               aria-describedby={describedBy("firstName")}
             />
             <Label htmlFor={id("firstName")} className="text-muted-foreground text-xs">
-              First
+              {copy.first}
             </Label>
             <FieldError id={errorId("firstName")} errors={errors.firstName} />
           </div>
@@ -158,7 +174,7 @@ export function ContactForm() {
               aria-describedby={describedBy("lastName")}
             />
             <Label htmlFor={id("lastName")} className="text-muted-foreground text-xs">
-              Last
+              {copy.last}
             </Label>
             <FieldError id={errorId("lastName")} errors={errors.lastName} />
           </div>
@@ -167,7 +183,7 @@ export function ContactForm() {
 
       <div className="flex flex-col gap-2">
         <Label htmlFor={id("email")}>
-          Email address <RequiredMark />
+          {copy.email} <RequiredMark />
         </Label>
         <Input
           id={id("email")}
@@ -182,18 +198,18 @@ export function ContactForm() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor={id("phone")}>Phone / WhatsApp</Label>
+        <Label htmlFor={id("phone")}>{copy.phone}</Label>
         <Input id={id("phone")} name="phone" type="tel" autoComplete="tel" />
       </div>
 
       <div className="flex flex-col gap-2">
         <Label htmlFor={id("vehicle")}>
-          What vehicle are you looking for? <RequiredMark />
+          {copy.vehicle} <RequiredMark />
         </Label>
         <Input
           id={id("vehicle")}
           name="vehicle"
-          placeholder="e.g. Honda Civic Type R EK9"
+          placeholder={copy.vehiclePlaceholder}
           required
           aria-invalid={!!errors.vehicle}
           aria-describedby={describedBy("vehicle")}
@@ -204,12 +220,12 @@ export function ContactForm() {
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label htmlFor={id("year")}>
-            Desired year / generation <RequiredMark />
+            {copy.year} <RequiredMark />
           </Label>
           <Input
             id={id("year")}
             name="year"
-            placeholder="e.g. 1996-2000"
+            placeholder={copy.yearPlaceholder}
             required
             aria-invalid={!!errors.year}
             aria-describedby={describedBy("year")}
@@ -219,12 +235,12 @@ export function ContactForm() {
 
         <div className="flex flex-col gap-2">
           <Label htmlFor={id("budget")}>
-            Budget (CHF) <RequiredMark />
+            {copy.budget} <RequiredMark />
           </Label>
           <Input
             id={id("budget")}
             name="budget"
-            placeholder="e.g. CHF 35,000"
+            placeholder={copy.budgetPlaceholder}
             required
             aria-invalid={!!errors.budget}
             aria-describedby={describedBy("budget")}
@@ -236,12 +252,13 @@ export function ContactForm() {
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label htmlFor={id("transmission")}>
-            Transmission <RequiredMark />
+            {copy.transmission} <RequiredMark />
           </Label>
           <NativeSelect
             id={id("transmission")}
             name="transmission"
-            options={contactForm.transmission}
+            options={copy.transmissionOptions}
+            placeholder={copy.selectPlaceholder}
             required
             invalid={!!errors.transmission}
             describedBy={describedBy("transmission")}
@@ -251,12 +268,13 @@ export function ContactForm() {
 
         <div className="flex flex-col gap-2">
           <Label htmlFor={id("condition")}>
-            Vehicle condition <RequiredMark />
+            {copy.condition} <RequiredMark />
           </Label>
           <NativeSelect
             id={id("condition")}
             name="condition"
-            options={contactForm.condition}
+            options={copy.conditionOptions}
+            placeholder={copy.selectPlaceholder}
             required
             invalid={!!errors.condition}
             describedBy={describedBy("condition")}
@@ -266,31 +284,39 @@ export function ContactForm() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor={id("requirements")}>Additional requirements</Label>
+        <Label htmlFor={id("requirements")}>{copy.requirements}</Label>
         <Input
           id={id("requirements")}
           name="requirements"
-          placeholder="Colour, mileage, specifications, modifications, etc."
+          placeholder={copy.requirementsPlaceholder}
         />
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor={id("notes")}>Anything else we should know?</Label>
+        <Label htmlFor={id("notes")}>{copy.notes}</Label>
         <Textarea id={id("notes")} name="notes" rows={5} />
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor={id("referral")}>How did you hear about Tokyo2CH?</Label>
-        <NativeSelect id={id("referral")} name="referral" options={contactForm.referral} />
+        <Label htmlFor={id("referral")}>{copy.referral}</Label>
+        <NativeSelect
+          id={id("referral")}
+          name="referral"
+          options={copy.referralOptions}
+          placeholder={copy.selectPlaceholder}
+        />
       </div>
+
+      {/* Tells the Server Action which language to answer in. */}
+      <input type="hidden" name="locale" value={locale} />
 
       {/* Honeypot — hidden from humans and from assistive tech. */}
       <div aria-hidden="true" className="hidden">
-        <label htmlFor={`${baseId}-website`}>Leave this field empty</label>
+        <label htmlFor={`${baseId}-website`}>{copy.honeypot}</label>
         <input id={`${baseId}-website`} name="website" tabIndex={-1} autoComplete="off" />
       </div>
 
-      <SubmitButton />
+      <SubmitButton label={copy.submit} pendingLabel={copy.submitting} />
     </form>
   );
 }

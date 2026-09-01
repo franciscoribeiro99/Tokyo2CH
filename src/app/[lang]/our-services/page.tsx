@@ -5,23 +5,30 @@ import { Cta } from "@/components/sections/cta";
 import { PageHero } from "@/components/sections/page-hero";
 import { Reveal } from "@/components/sections/reveal";
 import { ServiceList } from "@/components/sections/service-list";
-import { services } from "@/config/content";
+import { localePath } from "@/config/i18n";
 import { media } from "@/config/media";
+import { getDictionary, getLocale } from "@/content/dictionaries";
 import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = buildMetadata({
-  title: "Our Services",
-  path: "/our-services",
-  description: services.hero.description,
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getDictionary();
+  return buildMetadata({
+    title: t.nav.ourServices,
+    path: "/our-services",
+    description: t.services.hero.description,
+  });
+}
 
-export default function OurServicesPage() {
+export default async function OurServicesPage() {
+  const locale = await getLocale();
+  const t = await getDictionary();
+
   return (
     <>
       <PageHero
-        eyebrow={services.hero.eyebrow}
-        title={services.hero.title}
-        description={services.hero.description}
+        eyebrow={t.services.hero.eyebrow}
+        title={t.services.hero.title}
+        description={t.services.hero.description}
       />
 
       <Section>
@@ -38,7 +45,7 @@ export default function OurServicesPage() {
           </Reveal>
 
           <ul className="flex flex-col gap-6">
-            {services.points.map((point, index) => (
+            {t.services.points.map((point, index) => (
               <Reveal as="li" key={point} delay={index * 90} className="flex gap-5">
                 <span aria-hidden="true" className="mt-2.5 h-px w-8 shrink-0 bg-primary sm:w-12" />
                 <p className="text-pretty text-lg leading-relaxed">{point}</p>
@@ -50,18 +57,18 @@ export default function OurServicesPage() {
 
       <Section className="border-border/60 border-t bg-muted/30">
         <SectionHeader
-          eyebrow="Services for your import"
-          title="Everything between the auction sheet and the number plate"
-          description="Take the whole process or just the part you need help with. Pricing is quoted per vehicle, because a kei car and a classic are not the same job."
+          eyebrow={t.services.itemsHeader.eyebrow}
+          title={t.services.itemsHeader.title}
+          description={t.services.itemsHeader.description}
           className="mb-14"
         />
-        <ServiceList items={services.items} />
+        <ServiceList items={t.services.items} />
       </Section>
 
       <Cta
-        title="Which part do you need help with?"
-        description="Whether you want the full service or only the Swiss import paperwork, tell us where you are and we will pick it up from there."
-        action={{ label: "Get in touch", href: "/contact" }}
+        title={t.services.cta.title}
+        description={t.services.cta.description}
+        action={{ label: t.actions.getInTouch, href: localePath(locale, "/contact") }}
       />
     </>
   );

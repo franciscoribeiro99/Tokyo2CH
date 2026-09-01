@@ -164,7 +164,7 @@ export const howItWorks = {
       title: "We source",
       description:
         "We source suitable Japanese vehicles, verify details, and share clear purchase options.",
-      cost: "Free",
+      cost: "Quoted per vehicle",
     },
     {
       step: "03",

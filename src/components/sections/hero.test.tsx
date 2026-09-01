@@ -57,8 +57,10 @@ describe("Hero", () => {
     expect(screen.getByText("日本からスイスへ")).toHaveAttribute("lang", "ja");
   });
 
-  it("exposes the scroll trigger the 3D scene binds to", () => {
+  it("renders the backdrop photograph decoratively, not as content", () => {
     const { container } = render(<Hero title="Title" description="Description" />);
-    expect(container.querySelector("[data-passage-trigger]")).toBeInTheDocument();
+    const image = container.querySelector("img");
+    // The photograph carries no information the copy does not already state.
+    expect(image).toHaveAttribute("alt", "");
   });
 });

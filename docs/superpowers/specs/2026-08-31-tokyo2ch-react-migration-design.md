@@ -73,7 +73,15 @@ public/media/                    ← downloaded assets
 docs/media-credits.md            ← per-asset source + licence + retrieval date
 ```
 
-### The 3D hero — "The Passage"
+### The 3D hero — "The Passage" — REMOVED
+
+> **Superseded.** The WebGL hero was removed at the client's request. The
+> section below is kept as the record of what was built and why, not as a
+> description of the current site. The hero is now a single full-bleed
+> photograph — which was already this scene's fallback, so it is what every
+> visitor without WebGL was seeing anyway. `three`, `@react-three/fiber`,
+> `gsap` and `motion` are no longer dependencies.
+
 
 A single scroll progress value `p ∈ [0,1]` drives everything, so there is exactly
 one source of truth and no competing tweens (the skill's "animation conflicts"

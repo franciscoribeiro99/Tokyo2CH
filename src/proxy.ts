@@ -28,10 +28,17 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   /**
-   * Skip anything that is not a page: build output, the API, and the
-   * file-based icons and feeds, which must stay at their own URLs.
+   * Pages only.
+   *
+   * The previous matcher listed the file-based routes by name, which missed
+   * everything in `public/`: every request for /media/… was redirected to
+   * /fr/media/…, so every image and the video 404'd, and the image optimiser
+   * answered 400 because the file it fetches was being redirected under it.
+   *
+   * Excluding any path containing a dot covers all of public/ and the
+   * extension-bearing routes at once, and keeps covering them when new assets
+   * are added. `opengraph-image` is listed separately because it is a route
+   * with no extension.
    */
-  matcher: [
-    "/((?!_next|api|icon.svg|apple-icon.png|opengraph-image|robots.txt|sitemap.xml|favicon.ico).*)",
-  ],
+  matcher: ["/((?!_next|api|opengraph-image|.*\\..*).*)"],
 };

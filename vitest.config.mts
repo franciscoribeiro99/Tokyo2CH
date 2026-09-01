@@ -26,6 +26,7 @@ export default defineConfig({
        *                          landmarks) is asserted by the Playwright suite
        */
       include: [
+        "src/components/brand/**/*.tsx",
         "src/components/layout/**/*.tsx",
         "src/components/sections/**/*.tsx",
         "src/components/prose.tsx",

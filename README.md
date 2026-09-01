@@ -82,14 +82,30 @@ Open <http://localhost:3000>.
 
 ## Wiring up the contact form
 
-The template does not hardcode an email provider. Provision one from the [Vercel Marketplace](https://vercel.com/marketplace) (Resend, Postmark, SendGrid), then implement `deliver()` in `src/app/actions/contact.ts`.
+Enquiries are delivered over SMTP by `src/lib/mailer.ts`, using the Hostinger mailbox behind `contact@tokyo2ch.ch`. The message is plain-text and HTML, labelled from the French dictionary, with `Reply-To` set to the visitor so hitting reply answers the lead directly.
 
-Until you do, behaviour is controlled by `CONTACT_DELIVERY_MODE`:
+Set these in **Vercel → Project Settings → Environment Variables**:
+
+| Variable | Value | Required |
+|---|---|---|
+| `SMTP_HOST` | `smtp.hostinger.com` | yes |
+| `SMTP_PORT` | `465` (implicit TLS), or `587` if 465 is blocked | no — defaults to `465` |
+| `SMTP_SECURE` | `true` / `false` | no — follows the port |
+| `SMTP_USER` | the full mailbox address | yes |
+| `SMTP_PASSWORD` | that mailbox's password — **mark it Sensitive** | yes |
+| `CONTACT_TO_EMAIL` | where enquiries land | no — defaults to `siteConfig.contact.email` |
+| `CONTACT_FROM_EMAIL` | envelope sender | no — defaults to `SMTP_USER` |
+
+`SMTP_SECURE` exists only as an escape hatch: it defaults to `true` on 465 and `false` on 587, which is what each port expects. Setting `secure: true` on 587 hangs until the socket times out, so leave it unset unless you have a reason.
+
+Behaviour is switched by `CONTACT_DELIVERY_MODE`:
 
 - `log` — validate and log, send nothing. The default in development and E2E.
-- `provider` — call `deliver()`. The default in production, which **throws** until you implement it.
+- `provider` — send over SMTP. The default in production.
 
-That default is intentional. A contact form that silently swallows leads is worse than one that errors loudly on your first deploy.
+Leave it unset in Production. On Preview, set it to `log` unless you want test deployments emailing real leads. The production default is intentional: a contact form that silently swallows leads is worse than one that errors loudly on your first deploy, so a missing credential fails the submission and logs the variable that is missing.
+
+**SMTP on Vercel.** The Server Action runs on the Node.js runtime, which can open the outbound TCP connection SMTP needs — the Edge runtime cannot, so do not move this action there. Connection, greeting, and socket timeouts are set in `mailer.ts` so a wedged handshake cannot run out the function's execution budget. A fresh transport is created per invocation rather than pooled, because a pooled socket resumed after a function freeze is one the server has already closed.
 
 ---
 
@@ -102,6 +118,8 @@ pnpm dlx vercel --prod
 ```
 
 Vercel auto-detects Next.js — there is no `vercel.json` to maintain. Set `NEXT_PUBLIC_SITE_URL` to your canonical origin (absolute, no trailing slash) in Production. Preview and Development can leave it unset; the app falls back to the Vercel-provided URL, then to `siteConfig.url`.
+
+The SMTP variables above go in the same place. `.env.example` lists every variable with its default.
 
 ---
 
@@ -127,7 +145,8 @@ src/
 └── lib/
     ├── env.ts            Zod-validated environment variables
     ├── seo.ts            Metadata and structured-data helpers
-    └── contact-schema.ts Shared client/server validation
+    ├── contact-schema.ts Shared client/server validation
+    └── mailer.ts         SMTP delivery for the enquiry form
 e2e/                      Playwright specs
 ```
 

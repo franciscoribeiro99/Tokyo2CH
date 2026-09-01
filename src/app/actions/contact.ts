@@ -1,6 +1,6 @@
 "use server";
 
-import { DEFAULT_LOCALE, isLocale } from "@/config/i18n";
+import { DEFAULT_LOCALE, isLocale, type Locale } from "@/config/i18n";
 import { getDictionaryFor } from "@/content/dictionaries";
 import {
   type ContactFormState,
@@ -8,16 +8,14 @@ import {
   makeContactSchema,
   toFieldErrors,
 } from "@/lib/contact-schema";
+import { sendContactEmail } from "@/lib/mailer";
 
 /**
  * Handle a contact form submission.
  *
  * Wired for `useActionState`, so the signature is (prevState, formData).
  *
- * ── Delivery is intentionally not implemented ──────────────────────────────
- * This template does not hardcode an email or CRM provider. Provision one from
- * the Vercel Marketplace (Resend, Postmark, SendGrid, …), then implement
- * `deliver` below. Leave the validation and error handling as-is.
+ * Delivery goes out over SMTP — see `src/lib/mailer.ts` and `.env.example`.
  */
 export async function submitContactForm(
   _prevState: ContactFormState,
@@ -63,7 +61,7 @@ export async function submitContactForm(
   }
 
   try {
-    await deliver(parsed.data);
+    await deliver(parsed.data, locale);
     return { status: "success", message: copy.success };
   } catch (error) {
     // Log detail server-side; never leak internals to the browser.
@@ -73,17 +71,20 @@ export async function submitContactForm(
 }
 
 /**
- * Replace this with your provider call.
+ * Hand a validated enquiry to the mail transport.
  *
- * @example
- *   const resend = new Resend(process.env.RESEND_API_KEY);
- *   await resend.emails.send({ to: siteConfig.contact.email, ... });
+ * `CONTACT_DELIVERY_MODE` decides between the two:
+ *   log      -> validate and log, send nothing. The default outside production,
+ *               and what the E2E suite runs under so the happy-path test does
+ *               not post real mail on every CI run.
+ *   provider -> send over SMTP. The default in production.
  *
- * Until you do, the default is deliberately fail-loud in production: a contact
- * form that silently swallows leads is far worse than one that errors. Set
- * CONTACT_DELIVERY_MODE=log to opt into log-only behaviour (dev and E2E do).
+ * The production default is deliberately the one that can fail: a contact form
+ * that silently swallows leads is far worse than one that errors on the first
+ * deploy. A missing credential surfaces here as a thrown error naming the
+ * variable, which the caller turns into the visitor-facing failure message.
  */
-async function deliver(input: ContactInput): Promise<void> {
+async function deliver(input: ContactInput, locale: Locale): Promise<void> {
   const mode =
     process.env.CONTACT_DELIVERY_MODE ??
     (process.env.NODE_ENV === "production" ? "provider" : "log");
@@ -93,7 +94,5 @@ async function deliver(input: ContactInput): Promise<void> {
     return;
   }
 
-  throw new Error(
-    "No contact delivery provider is configured. Implement deliver() in src/app/actions/contact.ts.",
-  );
+  await sendContactEmail(input, locale);
 }

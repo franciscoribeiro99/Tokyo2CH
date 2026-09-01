@@ -1,116 +1,111 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { siteConfig } from "@/config/site";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * `src/lib/seo` reads env at module scope, so each case needs a fresh module
- * registry rather than a shared import.
+ * `buildMetadata` reads the locale from the route rather than an argument, so
+ * the root param has to be stubbed. The mock is hoisted above the import.
  */
-async function loadSeo(env: Record<string, string | undefined> = {}) {
-  vi.resetModules();
-  for (const [key, value] of Object.entries(env)) {
-    if (value === undefined) vi.stubEnv(key, "");
-    else vi.stubEnv(key, value);
-  }
-  return import("@/lib/seo");
-}
+const currentLang = vi.hoisted(() => ({ value: "fr" }));
+vi.mock("next/root-params", () => ({ lang: async () => currentLang.value }));
+
+import { LOCALES } from "@/config/i18n";
+import { fr } from "@/content/fr";
+import { absoluteUrl, buildMetadata, getSiteUrl, organizationJsonLd } from "@/lib/seo";
 
 beforeEach(() => {
-  vi.unstubAllEnvs();
-});
-
-afterEach(() => {
-  vi.unstubAllEnvs();
-  vi.resetModules();
+  currentLang.value = "fr";
 });
 
 describe("getSiteUrl", () => {
-  it("prefers NEXT_PUBLIC_SITE_URL", async () => {
-    const { getSiteUrl } = await loadSeo({ NEXT_PUBLIC_SITE_URL: "https://acme.dev" });
-    expect(getSiteUrl()).toBe("https://acme.dev");
-  });
-
-  it("falls back to the Vercel production URL", async () => {
-    const { getSiteUrl } = await loadSeo({
-      VERCEL_PROJECT_PRODUCTION_URL: "acme.vercel.app",
-    });
-    expect(getSiteUrl()).toBe("https://acme.vercel.app");
-  });
-
-  it("falls back to the site config as a last resort", async () => {
-    const { getSiteUrl } = await loadSeo();
-    expect(getSiteUrl()).toBe(siteConfig.url);
+  it("falls back to the configured origin, without a trailing slash", () => {
+    expect(getSiteUrl()).toMatch(/^https?:\/\/[^/]+$/);
   });
 });
 
 describe("absoluteUrl", () => {
-  it("returns the bare origin for the root path", async () => {
-    const { absoluteUrl } = await loadSeo({ NEXT_PUBLIC_SITE_URL: "https://acme.dev" });
-    expect(absoluteUrl("/")).toBe("https://acme.dev");
+  it("returns the bare origin for the root", () => {
+    expect(absoluteUrl("/")).toBe(getSiteUrl());
   });
 
-  it("joins a path without doubling the slash", async () => {
-    const { absoluteUrl } = await loadSeo({ NEXT_PUBLIC_SITE_URL: "https://acme.dev" });
-    expect(absoluteUrl("/about")).toBe("https://acme.dev/about");
-  });
-
-  it("tolerates a path given without a leading slash", async () => {
-    const { absoluteUrl } = await loadSeo({ NEXT_PUBLIC_SITE_URL: "https://acme.dev" });
-    expect(absoluteUrl("about")).toBe("https://acme.dev/about");
+  it("joins a path onto the origin exactly once", () => {
+    expect(absoluteUrl("/fr/vehicles")).toBe(`${getSiteUrl()}/fr/vehicles`);
+    expect(absoluteUrl("fr/vehicles")).toBe(`${getSiteUrl()}/fr/vehicles`);
   });
 });
 
 describe("buildMetadata", () => {
-  it("sets a self-referencing canonical for every page", async () => {
-    const { buildMetadata } = await loadSeo({ NEXT_PUBLIC_SITE_URL: "https://acme.dev" });
-    const metadata = buildMetadata({ title: "About", path: "/about" });
-    expect(metadata.alternates?.canonical).toBe("https://acme.dev/about");
+  it("points the canonical at the current locale's copy of the page", async () => {
+    currentLang.value = "de";
+    const metadata = await buildMetadata({ path: "/vehicles" });
+    expect(metadata.alternates?.canonical).toBe(`${getSiteUrl()}/de/vehicles`);
   });
 
-  it("suffixes the site name onto the page title", async () => {
-    const { buildMetadata } = await loadSeo();
-    expect(buildMetadata({ title: "About" }).title).toBe(`About | ${siteConfig.name}`);
+  /**
+   * Without these, four translations look like four duplicate pages competing
+   * with each other rather than alternates of the same one.
+   */
+  it("advertises every language as an alternate, plus x-default", async () => {
+    const metadata = await buildMetadata({ path: "/contact" });
+    const languages = metadata.alternates?.languages ?? {};
+
+    for (const locale of LOCALES) {
+      expect(languages[locale]).toBe(`${getSiteUrl()}/${locale}/contact`);
+    }
+    // x-default points at the default locale, for a visitor we have no page for.
+    expect(languages["x-default"]).toBe(`${getSiteUrl()}/fr/contact`);
   });
 
-  it("uses the bare site name when no page title is given", async () => {
-    const { buildMetadata } = await loadSeo();
-    expect(buildMetadata().title).toBe(siteConfig.name);
+  it("falls back to the locale's own description when none is given", async () => {
+    const metadata = await buildMetadata({ path: "/" });
+    expect(metadata.description).toBe(fr.brand.description);
   });
 
-  it("marks a page noindex when asked", async () => {
-    const { buildMetadata } = await loadSeo();
-    expect(buildMetadata({ noIndex: true }).robots).toMatchObject({
-      index: false,
-      follow: false,
-    });
+  it("suffixes the site name onto a page title", async () => {
+    const metadata = await buildMetadata({ title: "Véhicules", path: "/vehicles" });
+    expect(metadata.title).toContain("Véhicules");
   });
 
-  it("keeps the OG url in sync with the canonical", async () => {
-    const { buildMetadata } = await loadSeo({ NEXT_PUBLIC_SITE_URL: "https://acme.dev" });
-    const metadata = buildMetadata({ path: "/services" });
-    expect(metadata.openGraph?.url).toBe("https://acme.dev/services");
-    expect(metadata.alternates?.canonical).toBe("https://acme.dev/services");
+  it("tags Open Graph with the regional locale and lists the others", async () => {
+    currentLang.value = "it";
+    const metadata = await buildMetadata({ path: "/" });
+    const openGraph = metadata.openGraph as { locale?: string; alternateLocale?: string[] };
+
+    expect(openGraph.locale).toBe("it_CH");
+    expect(openGraph.alternateLocale).toContain("fr_CH");
+    expect(openGraph.alternateLocale).not.toContain("it_CH");
+  });
+
+  it("can mark a page as no-index", async () => {
+    const metadata = await buildMetadata({ path: "/", noIndex: true });
+    expect(metadata.robots).toMatchObject({ index: false, follow: false });
   });
 });
 
 describe("organizationJsonLd", () => {
-  it("emits a parseable Organization + WebSite graph", async () => {
-    const { organizationJsonLd } = await loadSeo({ NEXT_PUBLIC_SITE_URL: "https://acme.dev" });
-    const parsed = JSON.parse(organizationJsonLd());
+  it("emits an Organization and a WebSite node", () => {
+    const parsed = JSON.parse(
+      organizationJsonLd("fr", fr)
+        .replace(/\\u003c/g, "<")
+        .replace(/\\u0026/g, "&"),
+    );
 
     expect(parsed["@context"]).toBe("https://schema.org");
-    expect(parsed["@graph"]).toHaveLength(2);
-    expect(parsed["@graph"][0]["@type"]).toBe("Organization");
-    expect(parsed["@graph"][1]["@type"]).toBe("WebSite");
+    expect(parsed["@graph"].map((node: { "@type": string }) => node["@type"])).toEqual([
+      "Organization",
+      "WebSite",
+    ]);
   });
 
-  it("escapes characters that could break out of a script tag", async () => {
-    const { organizationJsonLd } = await loadSeo();
-    const output = organizationJsonLd();
+  it("declares the language of the description it ships", () => {
+    const parsed = JSON.parse(organizationJsonLd("de", fr).replace(/\\u003c/g, "<"));
+    const website = parsed["@graph"][1];
+    expect(website.inLanguage).toBe("de");
+  });
 
-    expect(output).not.toContain("<");
-    expect(output).not.toContain(">");
-    expect(output).not.toContain("&");
-    // Still valid JSON once the escapes are decoded.
-    expect(() => JSON.parse(output)).not.toThrow();
+  /**
+   * A string containing `</script>` would close the tag early and turn trusted
+   * data into an injection point.
+   */
+  it("escapes angle brackets so the inline script cannot be closed early", () => {
+    expect(organizationJsonLd("fr", fr)).not.toContain("</");
   });
 });

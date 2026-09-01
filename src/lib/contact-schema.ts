@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { contactForm } from "@/config/content";
+import { CONDITION_VALUES, REFERRAL_VALUES, TRANSMISSION_VALUES } from "@/config/form-options";
+import type { Dictionary } from "@/content/fr";
 
 /**
  * Shared between the client form and the Server Action.
@@ -7,93 +8,62 @@ import { contactForm } from "@/config/content";
  * Client-side validation is a UX convenience only — the Server Action
  * re-validates with this exact schema, because anything reaching a server
  * action is untrusted regardless of what the form did.
- */
-
-const allowed = (options: readonly { readonly value: string }[]): readonly string[] =>
-  options.map((option) => option.value);
-
-/**
- * A required `<select>`.
  *
- * Its placeholder option submits an empty string, so "nothing chosen" has to
- * fail here rather than being quietly accepted as a valid answer. Values are
- * derived from the same arrays the form renders, so the two cannot drift.
+ * The schema is built per request rather than defined once, because its
+ * messages have to reach the visitor in their own language. The *values* it
+ * accepts come from `form-options`, never from a dictionary: translating a
+ * label must not be able to change what the server considers valid.
  */
-function requiredChoice(options: readonly { readonly value: string }[], message: string) {
-  const values = allowed(options);
+
+type ErrorCopy = Dictionary["form"]["errors"];
+
+/** A required `<select>`: its placeholder option submits "", which must fail. */
+function requiredChoice(allowed: readonly string[], message: string) {
   return z
     .string()
     .trim()
-    .refine((value) => values.includes(value), { message });
+    .refine((value) => allowed.includes(value), { message });
 }
 
 /** An optional `<select>`: empty is fine, but a made-up value is not. */
-function optionalChoice(options: readonly { readonly value: string }[], message: string) {
-  const values = allowed(options);
+function optionalChoice(allowed: readonly string[], message: string) {
   return z
     .string()
     .trim()
-    .refine((value) => value === "" || values.includes(value), { message })
+    .refine((value) => value === "" || allowed.includes(value), { message })
     .optional();
 }
 
-export const contactSchema = z.object({
-  firstName: z
-    .string()
-    .trim()
-    .min(1, "Please enter your first name.")
-    .max(80, "That first name is too long."),
-  lastName: z
-    .string()
-    .trim()
-    .min(1, "Please enter your last name.")
-    .max(80, "That last name is too long."),
-  email: z.email("Please enter a valid email address.").max(320),
-  /** Phone or WhatsApp. Deliberately unvalidated beyond length — international
-   *  formats vary too much to reject on a pattern without losing real leads. */
-  phone: z.string().trim().max(40, "That number is too long.").optional().or(z.literal("")),
+export function makeContactSchema(errors: ErrorCopy) {
+  return z.object({
+    firstName: z.string().trim().min(1, errors.firstName).max(80, errors.firstNameLong),
+    lastName: z.string().trim().min(1, errors.lastName).max(80, errors.lastNameLong),
+    email: z.email(errors.email).max(320),
+    /** Phone or WhatsApp. Unvalidated beyond length: international formats
+     *  vary too much to reject on a pattern without losing real leads. */
+    phone: z.string().trim().max(40, errors.phoneLong).optional().or(z.literal("")),
 
-  vehicle: z
-    .string()
-    .trim()
-    .min(2, "Tell us which vehicle you are looking for.")
-    .max(160, "Please keep this under 160 characters."),
-  year: z
-    .string()
-    .trim()
-    .min(1, "Please give a year or generation.")
-    .max(60, "Please keep this under 60 characters."),
-  budget: z
-    .string()
-    .trim()
-    .min(1, "Please give an approximate budget.")
-    .max(60, "Please keep this under 60 characters."),
+    vehicle: z.string().trim().min(2, errors.vehicle).max(160, errors.tooLong),
+    year: z.string().trim().min(1, errors.year).max(60, errors.tooLong),
+    budget: z.string().trim().min(1, errors.budget).max(60, errors.tooLong),
 
-  transmission: requiredChoice(contactForm.transmission, "Please choose a transmission."),
-  condition: requiredChoice(contactForm.condition, "Please choose a vehicle condition."),
+    transmission: requiredChoice(TRANSMISSION_VALUES, errors.transmission),
+    condition: requiredChoice(CONDITION_VALUES, errors.condition),
 
-  requirements: z
-    .string()
-    .trim()
-    .max(500, "Please keep this under 500 characters.")
-    .optional()
-    .or(z.literal("")),
-  notes: z
-    .string()
-    .trim()
-    .max(5000, "Please keep this under 5000 characters.")
-    .optional()
-    .or(z.literal("")),
-  referral: optionalChoice(contactForm.referral, "Please choose one of the listed options."),
+    requirements: z.string().trim().max(500, errors.tooLong).optional().or(z.literal("")),
+    notes: z.string().trim().max(5000, errors.tooLong).optional().or(z.literal("")),
+    referral: optionalChoice(REFERRAL_VALUES, errors.choice),
 
-  /**
-   * Honeypot. Real users never fill a hidden field; bots fill everything.
-   * Must be empty to pass.
-   */
-  website: z.literal("").optional(),
-});
+    /**
+     * Honeypot. Real users never fill a hidden field; bots fill everything.
+     * Must be empty to pass.
+     */
+    website: z.literal("").optional(),
+  });
+}
 
-export type ContactInput = z.infer<typeof contactSchema>;
+export type ContactSchema = ReturnType<typeof makeContactSchema>;
+export type ContactInput = z.infer<ContactSchema>;
 
 export type ContactFieldErrors = Partial<Record<keyof ContactInput, string[]>>;
 

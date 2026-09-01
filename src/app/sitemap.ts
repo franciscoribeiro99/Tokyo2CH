@@ -1,11 +1,14 @@
 import type { MetadataRoute } from "next";
+import { DEFAULT_LOCALE, LOCALES, localePath } from "@/config/i18n";
 import { getSiteUrl } from "@/lib/seo";
 
 /**
  * Static route manifest.
  *
- * When you add dynamic content (blog, case studies), map over your data source
- * here and append the entries — do not maintain a second hand-written list.
+ * Emitted once per language, so eight routes become thirty-two entries. Each
+ * carries the full `alternates.languages` map: without it a search engine sees
+ * four unrelated pages saying the same thing rather than one page in four
+ * languages.
  */
 const ROUTES = [
   { path: "/", changeFrequency: "weekly", priority: 1 },
@@ -26,10 +29,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = getSiteUrl();
   const lastModified = new Date();
 
-  return ROUTES.map((route) => ({
-    url: route.path === "/" ? baseUrl : `${baseUrl}${route.path}`,
-    lastModified,
-    changeFrequency: route.changeFrequency,
-    priority: route.priority,
-  }));
+  return ROUTES.flatMap((route) => {
+    const languages = Object.fromEntries(
+      LOCALES.map((locale) => [locale, `${baseUrl}${localePath(locale, route.path)}`]),
+    );
+
+    return LOCALES.map((locale) => ({
+      url: `${baseUrl}${localePath(locale, route.path)}`,
+      lastModified,
+      changeFrequency: route.changeFrequency,
+      priority: route.priority,
+      alternates: {
+        languages: {
+          ...languages,
+          "x-default": `${baseUrl}${localePath(DEFAULT_LOCALE, route.path)}`,
+        },
+      },
+    }));
+  });
 }

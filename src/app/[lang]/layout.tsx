@@ -7,9 +7,11 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { SkipLink } from "@/components/layout/skip-link";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { LOCALE_HTML_LANG, LOCALES } from "@/config/i18n";
 import { siteConfig } from "@/config/site";
+import { getDictionary, getLocale } from "@/content/dictionaries";
 import { buildMetadata, getSiteUrl, organizationJsonLd } from "@/lib/seo";
-import "./globals.css";
+import "../globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,14 +25,7 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
-/**
- * Display face. Chosen because it carries latin and kana in one family, so the
- * Japanese accents in the copy are set in the same voice as the headlines
- * rather than falling back to whatever the OS supplies.
- *
- * Only the two weights actually used are requested — this family has no
- * variable version, so every extra weight is another font file over the wire.
- */
+/** Display face for headings. Latin only — see KANA_FONT_HREF below. */
 const zenKaku = Zen_Kaku_Gothic_New({
   variable: "--font-zen-display",
   subsets: ["latin"],
@@ -38,19 +33,45 @@ const zenKaku = Zen_Kaku_Gothic_New({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  // metadataBase makes every relative OG/twitter image URL resolve correctly.
-  metadataBase: new URL(getSiteUrl()),
-  ...buildMetadata(),
-  title: {
-    default: siteConfig.name,
-    template: `%s | ${siteConfig.name}`,
-  },
-  applicationName: siteConfig.name,
-  authors: [{ name: siteConfig.legalName }],
-  creator: siteConfig.legalName,
-  formatDetection: { telephone: false },
-};
+/**
+ * The eight kana in the hero, and nothing else.
+ *
+ * `next/font/google` does not offer this family's Japanese subset — its types
+ * allow only latin, latin-ext and cyrillic — so a latin-subset file contains
+ * no kana at all and 日本からスイスへ falls back to whatever the operating
+ * system supplies, or to empty boxes on a machine with no Japanese font.
+ *
+ * Google Fonts' `text=` parameter returns a file containing only the glyphs
+ * asked for: roughly two kilobytes rather than the several megabytes a full
+ * Japanese face weighs. It has to be a plain link because `next/font` exposes
+ * no equivalent.
+ */
+const KANA_FONT_HREF =
+  "https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700&text=%E6%97%A5%E6%9C%AC%E3%81%8B%E3%82%89%E3%82%B9%E3%82%A4%E3%82%B9%E3%81%B8&display=swap";
+
+/** Prerenders all four languages at build time. */
+export function generateStaticParams() {
+  return LOCALES.map((lang) => ({ lang }));
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const dictionary = await getDictionary();
+
+  return {
+    // metadataBase makes every relative OG/twitter image URL resolve correctly.
+    metadataBase: new URL(getSiteUrl()),
+    ...(await buildMetadata()),
+    title: {
+      default: siteConfig.name,
+      template: `%s | ${siteConfig.name}`,
+    },
+    description: dictionary.brand.description,
+    applicationName: siteConfig.name,
+    authors: [{ name: siteConfig.legalName }],
+    creator: siteConfig.legalName,
+    formatDetection: { telephone: false },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: [
@@ -60,10 +81,13 @@ export const viewport: Viewport = {
   colorScheme: "light dark",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const locale = await getLocale();
+  const dictionary = await getDictionary();
+
   return (
     <html
-      lang={siteConfig.lang}
+      lang={LOCALE_HTML_LANG[locale]}
       // next-themes writes the class here before paint; suppress the expected
       // server/client mismatch on this element only.
       suppressHydrationWarning
@@ -72,6 +96,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} ${zenKaku.variable} h-full antialiased`}
     >
+      <head>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="stylesheet" href={KANA_FONT_HREF} />
+      </head>
       <body className="flex min-h-full flex-col">
         <ThemeProvider
           attribute="class"
@@ -79,12 +107,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           enableSystem
           disableTransitionOnChange
         >
-          <SkipLink />
-          <SiteHeader />
+          <SkipLink label={dictionary.nav.skipToContent} />
+          <SiteHeader locale={locale} dictionary={dictionary} />
           <main id="main" className="flex flex-1 flex-col">
             {children}
           </main>
-          <SiteFooter />
+          <SiteFooter locale={locale} dictionary={dictionary} />
           <Toaster />
         </ThemeProvider>
 
@@ -92,7 +120,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <script
           type="application/ld+json"
           // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD must be inlined; content is generated from static config, not user input.
-          dangerouslySetInnerHTML={{ __html: organizationJsonLd() }}
+          dangerouslySetInnerHTML={{ __html: organizationJsonLd(locale, dictionary) }}
         />
 
         <Analytics />

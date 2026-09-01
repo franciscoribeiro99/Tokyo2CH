@@ -7,37 +7,40 @@ import { Hero } from "@/components/sections/hero";
 import { JourneyBand } from "@/components/sections/journey-band";
 import { Pillars } from "@/components/sections/pillars";
 import { Reveal } from "@/components/sections/reveal";
-import { faq as faqContent, home } from "@/config/content";
+import { localePath } from "@/config/i18n";
 import { media } from "@/config/media";
+import { getDictionary, getLocale } from "@/content/dictionaries";
 import { buildMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = buildMetadata({ path: "/" });
+export function generateMetadata(): Promise<Metadata> {
+  return buildMetadata({ path: "/" });
+}
 
-/** The home page shows the first three questions; the rest live on /faq. */
-const FAQ_PREVIEW = faqContent.items.slice(0, 3);
+export default async function HomePage() {
+  const locale = await getLocale();
+  const t = await getDictionary();
 
-export default function HomePage() {
   return (
     <>
       <Hero
-        eyebrow={home.hero.eyebrow}
-        kana={home.hero.kana}
-        title={home.hero.title}
-        description={home.hero.description}
-        primaryCta={home.hero.primaryCta}
-        secondaryCta={home.hero.secondaryCta}
+        eyebrow={t.home.hero.eyebrow}
+        kana={t.home.hero.kana}
+        title={t.home.hero.title}
+        description={t.home.hero.description}
+        primaryCta={{ label: t.actions.startSourcing, href: localePath(locale, "/contact") }}
+        secondaryCta={{ label: t.actions.seeWhatWeSource, href: localePath(locale, "/vehicles") }}
       />
 
       <Section>
-        <Pillars items={home.pillars} />
+        <Pillars items={t.home.pillars} />
       </Section>
 
       <Section className="border-border/60 border-t bg-muted/30">
         <div className="grid items-center gap-12 lg:grid-cols-[1fr_22rem] lg:gap-16">
           <div>
-            <SectionHeader eyebrow={home.services.eyebrow} title={home.services.title} />
+            <SectionHeader eyebrow={t.home.services.eyebrow} title={t.home.services.title} />
             <ul className="mt-10 flex flex-col gap-6">
-              {home.services.points.map((point, index) => (
+              {t.home.services.points.map((point, index) => (
                 <Reveal as="li" key={point} delay={index * 90} className="flex gap-5">
                   <span
                     aria-hidden="true"
@@ -63,25 +66,29 @@ export default function HomePage() {
       </Section>
 
       <JourneyBand
-        eyebrow={home.band.eyebrow}
-        title={home.band.title}
-        description={home.band.description}
+        eyebrow={t.home.band.eyebrow}
+        title={t.home.band.title}
+        description={t.home.band.description}
         video={media.journeyVideo}
       />
 
       <Section className="border-border/60 border-t">
         <SectionHeader
-          eyebrow="Questions"
-          title="The things people ask first"
+          eyebrow={t.home.faqSection.eyebrow}
+          title={t.home.faqSection.title}
           align="center"
           className="mb-12"
         />
         <div className="mx-auto max-w-3xl">
-          <Faq items={FAQ_PREVIEW} />
+          <Faq items={t.faq.items.slice(0, 3)} />
         </div>
       </Section>
 
-      <Cta title={home.cta.title} description={home.cta.description} action={home.cta.action} />
+      <Cta
+        title={t.home.cta.title}
+        description={t.home.cta.description}
+        action={{ label: t.actions.startSourcing, href: localePath(locale, "/contact") }}
+      />
     </>
   );
 }

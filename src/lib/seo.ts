@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import { DEFAULT_LOCALE, LOCALE_OG, LOCALES, type Locale, localePath } from "@/config/i18n";
 import { siteConfig } from "@/config/site";
+import { getDictionary, getLocale } from "@/content/dictionaries";
+import type { Dictionary } from "@/content/fr";
 import { env } from "@/lib/env";
 
 /**
@@ -30,30 +33,50 @@ export function absoluteUrl(path: string): string {
 interface BuildMetadataOptions {
   readonly title?: string;
   readonly description?: string;
-  /** Route path, e.g. "/about". Used for the canonical link. */
+  /** Route path without the locale prefix, e.g. "/vehicles". */
   readonly path?: string;
   readonly noIndex?: boolean;
 }
 
 /**
- * Build page metadata with correct canonical, OG, and Twitter tags.
+ * Build page metadata with correct canonical, hreflang, OG, and Twitter tags.
  *
- * Every page should call this rather than hand-rolling a Metadata object —
- * that is how canonical tags silently drift.
+ * Async because it reads the current locale from the route rather than taking
+ * it as an argument: every page would otherwise have to pass it, and one page
+ * forgetting would emit a canonical pointing at the wrong language.
  */
-export function buildMetadata({
+export async function buildMetadata({
   title,
-  description = siteConfig.description,
+  description,
   path = "/",
   noIndex = false,
-}: BuildMetadataOptions = {}): Metadata {
+}: BuildMetadataOptions = {}): Promise<Metadata> {
+  const locale = await getLocale();
+  const dictionary = await getDictionary();
+
   const resolvedTitle = title ? `${title} | ${siteConfig.name}` : siteConfig.name;
-  const url = absoluteUrl(path);
+  const resolvedDescription = description ?? dictionary.brand.description;
+  const url = absoluteUrl(localePath(locale, path));
+
+  /**
+   * One entry per language, plus `x-default` for a visitor whose language we
+   * do not publish. Without these, the four translations look like duplicate
+   * pages competing with each other rather than alternates of one page.
+   */
+  const languages = Object.fromEntries(
+    LOCALES.map((candidate) => [candidate, absoluteUrl(localePath(candidate, path))]),
+  );
 
   return {
     title: resolvedTitle,
-    description,
-    alternates: { canonical: url },
+    description: resolvedDescription,
+    alternates: {
+      canonical: url,
+      languages: {
+        ...languages,
+        "x-default": absoluteUrl(localePath(DEFAULT_LOCALE, path)),
+      },
+    },
     robots: noIndex
       ? { index: false, follow: false }
       : {
@@ -64,15 +87,16 @@ export function buildMetadata({
     openGraph: {
       type: "website",
       siteName: siteConfig.name,
-      locale: siteConfig.locale,
+      locale: LOCALE_OG[locale],
+      alternateLocale: LOCALES.filter((c) => c !== locale).map((c) => LOCALE_OG[c]),
       url,
       title: resolvedTitle,
-      description,
+      description: resolvedDescription,
     },
     twitter: {
       card: "summary_large_image",
       title: resolvedTitle,
-      description,
+      description: resolvedDescription,
     },
   };
 }
@@ -98,7 +122,7 @@ function toJsonLdScript(value: unknown): string {
  * Emitted once, in the root layout — not per page. Duplicating Organization
  * markup across pages is a common and avoidable structured-data error.
  */
-export function organizationJsonLd(): string {
+export function organizationJsonLd(locale: Locale, dictionary: Dictionary): string {
   const url = getSiteUrl();
 
   return toJsonLdScript({
@@ -128,8 +152,8 @@ export function organizationJsonLd(): string {
         "@id": `${url}/#website`,
         url,
         name: siteConfig.name,
-        description: siteConfig.description,
-        inLanguage: siteConfig.lang,
+        description: dictionary.brand.description,
+        inLanguage: locale,
         publisher: { "@id": `${url}/#organization` },
       },
     ],

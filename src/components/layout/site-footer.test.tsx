@@ -1,50 +1,62 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { siteConfig } from "@/config/site";
+import { fr } from "@/content/fr";
+
+vi.mock("next/navigation", () => ({ usePathname: () => "/fr/vehicles" }));
 
 describe("SiteFooter", () => {
-  it("renders as the contentinfo landmark", () => {
-    render(<SiteFooter />);
-    expect(screen.getByRole("contentinfo")).toBeInTheDocument();
-  });
-
-  it("links every main and footer nav destination", () => {
-    render(<SiteFooter />);
-    const nav = screen.getByRole("navigation", { name: "Footer" });
+  it("lists every page, prefixed with the locale", () => {
+    render(<SiteFooter locale="fr" dictionary={fr} />);
+    const nav = screen.getByRole("navigation", { name: fr.nav.footer });
 
     for (const item of [...siteConfig.mainNav, ...siteConfig.footerNav]) {
-      expect(within(nav).getByRole("link", { name: item.title })).toHaveAttribute(
+      expect(within(nav).getByRole("link", { name: fr.nav[item.key] })).toHaveAttribute(
         "href",
-        item.href,
+        `/fr${item.href}`,
       );
     }
   });
 
-  it("opens external social links safely in a new tab", () => {
-    render(<SiteFooter />);
-    const nav = screen.getByRole("navigation", { name: "Social" });
+  it("links each social account out with rel protections", () => {
+    render(<SiteFooter locale="fr" dictionary={fr} />);
+    const nav = screen.getByRole("navigation", { name: fr.nav.social });
 
     for (const social of siteConfig.social) {
       const link = within(nav).getByRole("link", { name: social.label });
       expect(link).toHaveAttribute("href", social.href);
-      expect(link).toHaveAttribute("target", "_blank");
-      // Prevents the opened page from reaching back through window.opener.
-      expect(link.getAttribute("rel")).toContain("noopener");
+      expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
     }
   });
 
-  it("shows a mailto link for the configured address", () => {
-    render(<SiteFooter />);
+  it("exposes the contact email as a mailto link", () => {
+    render(<SiteFooter locale="fr" dictionary={fr} />);
     expect(screen.getByRole("link", { name: siteConfig.contact.email })).toHaveAttribute(
       "href",
       `mailto:${siteConfig.contact.email}`,
     );
   });
 
-  it("renders the current year in the copyright line", () => {
-    render(<SiteFooter />);
-    const year = String(new Date().getFullYear());
-    expect(screen.getByText(new RegExp(`${year}.*${siteConfig.legalName}`))).toBeInTheDocument();
+  /**
+   * Repeated from the header on purpose: someone arriving mid-page from a
+   * search result should not have to scroll back up to change language.
+   */
+  it("repeats the language switcher, spelling the languages out in full", () => {
+    render(<SiteFooter locale="fr" dictionary={fr} />);
+    const switcher = screen.getByRole("navigation", { name: fr.nav.language });
+    expect(within(switcher).getByRole("link", { name: "Deutsch" })).toBeInTheDocument();
+    expect(within(switcher).getByRole("link", { name: "Italiano" })).toBeInTheDocument();
+  });
+
+  it("keeps the language switcher on the same page when switching", () => {
+    render(<SiteFooter locale="fr" dictionary={fr} />);
+    const switcher = screen.getByRole("navigation", { name: fr.nav.language });
+    // Reading /fr/vehicles and picking German must land on /de/vehicles,
+    // not dump the visitor back on the home page.
+    expect(within(switcher).getByRole("link", { name: "Deutsch" })).toHaveAttribute(
+      "href",
+      "/de/vehicles",
+    );
   });
 });

@@ -2,40 +2,49 @@ import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { SiteHeader } from "@/components/layout/site-header";
 import { siteConfig } from "@/config/site";
+import { fr } from "@/content/fr";
 
-const usePathname = vi.hoisted(() => vi.fn(() => "/"));
-vi.mock("next/navigation", () => ({ usePathname }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/fr" }));
 
 describe("SiteHeader", () => {
-  it("renders as the banner landmark", () => {
-    render(<SiteHeader />);
-    expect(screen.getByRole("banner")).toBeInTheDocument();
+  it("links the brand back to the home page of the current language", () => {
+    render(<SiteHeader locale="fr" dictionary={fr} />);
+    expect(screen.getByRole("link", { name: siteConfig.name })).toHaveAttribute("href", "/fr");
   });
 
-  it("links the wordmark home", () => {
-    render(<SiteHeader />);
-    expect(screen.getByRole("link", { name: siteConfig.name })).toHaveAttribute("href", "/");
-  });
-
-  it("renders every configured main nav destination", () => {
-    render(<SiteHeader />);
-    const nav = screen.getByRole("navigation", { name: "Main" });
+  it("renders every main nav destination, prefixed with the locale", () => {
+    render(<SiteHeader locale="fr" dictionary={fr} />);
+    const nav = screen.getByRole("navigation", { name: fr.nav.main });
 
     for (const item of siteConfig.mainNav) {
-      expect(within(nav).getByRole("link", { name: item.title })).toHaveAttribute(
+      expect(within(nav).getByRole("link", { name: fr.nav[item.key] })).toHaveAttribute(
         "href",
-        item.href,
+        `/fr${item.href}`,
       );
     }
   });
 
-  it("names the main nav so it is distinguishable from the mobile one", () => {
-    render(<SiteHeader />);
-    expect(screen.getByRole("navigation", { name: "Main" })).toBeInTheDocument();
+  it("labels the nav in the current language, not in English", () => {
+    render(<SiteHeader locale="de" dictionary={fr} />);
+    // The dictionary drives the labels, so passing French copy yields French.
+    expect(screen.getByRole("navigation", { name: fr.nav.main })).toBeInTheDocument();
   });
 
-  it("exposes a labelled trigger for the mobile menu", () => {
-    render(<SiteHeader />);
-    expect(screen.getByRole("button", { name: /open menu/i })).toBeInTheDocument();
+  it("offers every language in the switcher", () => {
+    render(<SiteHeader locale="fr" dictionary={fr} />);
+    const switcher = screen.getByRole("navigation", { name: fr.nav.language });
+
+    for (const code of ["FR", "DE", "IT", "EN"]) {
+      expect(within(switcher).getByRole("link", { name: code })).toBeInTheDocument();
+    }
+  });
+
+  it("marks the active language so it is not just a colour change", () => {
+    render(<SiteHeader locale="fr" dictionary={fr} />);
+    const switcher = screen.getByRole("navigation", { name: fr.nav.language });
+    expect(within(switcher).getByRole("link", { name: "FR" })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
   });
 });

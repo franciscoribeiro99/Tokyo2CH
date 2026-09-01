@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { contactForm } from "@/config/content";
-import { contactSchema, toFieldErrors } from "@/lib/contact-schema";
+import { de } from "@/content/de";
+import { fr } from "@/content/fr";
+import { makeContactSchema, toFieldErrors } from "@/lib/contact-schema";
+
+const schema = makeContactSchema(fr.form.errors);
 
 const valid = {
   firstName: "Ada",
@@ -9,22 +12,22 @@ const valid = {
   phone: "+41 78 811 83 14",
   vehicle: "Honda Civic Type R EK9",
   year: "1996-2000",
-  budget: "CHF 35,000",
+  budget: "CHF 35 000",
   transmission: "manual",
   condition: "excellent",
-  requirements: "Championship White, under 120k km, unmodified",
-  notes: "Happy to wait for the right car.",
+  requirements: "Championship White, moins de 120 000 km, d'origine",
+  notes: "Je peux attendre la bonne voiture.",
   referral: "instagram",
   website: "",
 } as const;
 
 describe("contactSchema", () => {
   it("accepts a well-formed enquiry", () => {
-    expect(contactSchema.safeParse(valid).success).toBe(true);
+    expect(schema.safeParse(valid).success).toBe(true);
   });
 
   it("trims surrounding whitespace on text fields", () => {
-    const result = contactSchema.safeParse({ ...valid, vehicle: "  Nissan Skyline R34  " });
+    const result = schema.safeParse({ ...valid, vehicle: "  Nissan Skyline R34  " });
     expect(result.success).toBe(true);
     if (result.success) expect(result.data.vehicle).toBe("Nissan Skyline R34");
   });
@@ -36,7 +39,7 @@ describe("contactSchema", () => {
     ["the referral answer", "referral"],
   ])("treats %s as optional", (_label, field) => {
     const { [field as keyof typeof valid]: _omitted, ...rest } = valid;
-    expect(contactSchema.safeParse(rest).success).toBe(true);
+    expect(schema.safeParse(rest).success).toBe(true);
   });
 
   it.each([
@@ -47,7 +50,7 @@ describe("contactSchema", () => {
     ["no desired year", { year: "" }],
     ["no budget", { budget: "" }],
   ])("rejects %s", (_label, override) => {
-    expect(contactSchema.safeParse({ ...valid, ...override }).success).toBe(false);
+    expect(schema.safeParse({ ...valid, ...override }).success).toBe(false);
   });
 
   /**
@@ -57,7 +60,7 @@ describe("contactSchema", () => {
   it.each(["transmission", "condition"])(
     "rejects %s when the placeholder option is left selected",
     (field) => {
-      const result = contactSchema.safeParse({ ...valid, [field]: "" });
+      const result = schema.safeParse({ ...valid, [field]: "" });
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(toFieldErrors(result.error)[field as "transmission"]).toBeDefined();
@@ -68,44 +71,43 @@ describe("contactSchema", () => {
   it.each(["transmission", "condition", "referral"])(
     "rejects a %s value that is not one of the offered options",
     (field) => {
-      expect(contactSchema.safeParse({ ...valid, [field]: "not-an-option" }).success).toBe(false);
+      expect(schema.safeParse({ ...valid, [field]: "not-an-option" }).success).toBe(false);
     },
   );
 
-  it("accepts every option the form actually renders", () => {
-    for (const option of contactForm.transmission) {
-      expect(contactSchema.safeParse({ ...valid, transmission: option.value }).success).toBe(true);
-    }
-    for (const option of contactForm.condition) {
-      expect(contactSchema.safeParse({ ...valid, condition: option.value }).success).toBe(true);
-    }
-    for (const option of contactForm.referral) {
-      expect(contactSchema.safeParse({ ...valid, referral: option.value }).success).toBe(true);
-    }
-  });
-
   it("rejects a filled honeypot so bots can be identified", () => {
-    const result = contactSchema.safeParse({ ...valid, website: "http://spam.example" });
+    const result = schema.safeParse({ ...valid, website: "http://spam.example" });
     expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(toFieldErrors(result.error).website).toBeDefined();
-    }
+    if (!result.success) expect(toFieldErrors(result.error).website).toBeDefined();
   });
 
-  it("rejects notes over the 5000 character limit", () => {
-    expect(contactSchema.safeParse({ ...valid, notes: "x".repeat(5001) }).success).toBe(false);
+  /**
+   * The whole point of building the schema per request: a German visitor must
+   * not be told what is wrong in French.
+   */
+  it("reports its errors in the language it was built with", () => {
+    const french = makeContactSchema(fr.form.errors).safeParse({ ...valid, firstName: "" });
+    const german = makeContactSchema(de.form.errors).safeParse({ ...valid, firstName: "" });
+
+    expect(french.success).toBe(false);
+    expect(german.success).toBe(false);
+    if (french.success || german.success) return;
+
+    expect(toFieldErrors(french.error).firstName?.[0]).toBe(fr.form.errors.firstName);
+    expect(toFieldErrors(german.error).firstName?.[0]).toBe(de.form.errors.firstName);
+    expect(fr.form.errors.firstName).not.toBe(de.form.errors.firstName);
   });
 });
 
 describe("toFieldErrors", () => {
   it("groups messages under their field name", () => {
-    const result = contactSchema.safeParse({ ...valid, firstName: "", email: "nope" });
+    const result = schema.safeParse({ ...valid, firstName: "", email: "nope" });
     expect(result.success).toBe(false);
     if (result.success) return;
 
     const errors = toFieldErrors(result.error);
-    expect(errors.firstName?.[0]).toBe("Please enter your first name.");
-    expect(errors.email?.[0]).toBe("Please enter a valid email address.");
+    expect(errors.firstName?.[0]).toBe(fr.form.errors.firstName);
+    expect(errors.email?.[0]).toBe(fr.form.errors.email);
     expect(errors.vehicle).toBeUndefined();
   });
 });

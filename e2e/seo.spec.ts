@@ -2,15 +2,15 @@ import { expect, test } from "@playwright/test";
 
 test.describe("seo surface", () => {
   test("pages carry a title, description, and self-referencing canonical", async ({ page }) => {
-    await page.goto("/vehicles");
+    await page.goto("/fr/vehicles");
 
-    await expect(page).toHaveTitle(/Vehicles/);
+    await expect(page).toHaveTitle(/Véhicules/);
     await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /.+/);
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/vehicles$/);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/fr\/vehicles$/);
   });
 
   test("open graph and twitter tags are present", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/fr");
 
     await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", /.+/);
     await expect(page.locator('meta[property="og:description"]')).toHaveAttribute("content", /.+/);
@@ -21,7 +21,7 @@ test.describe("seo surface", () => {
   });
 
   test("emits a valid Organization + WebSite JSON-LD graph", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/fr");
 
     const raw = await page.locator('script[type="application/ld+json"]').first().textContent();
     expect(raw).toBeTruthy();
@@ -39,8 +39,10 @@ test.describe("seo surface", () => {
 
     expect(response.status()).toBe(200);
     const body = await response.text();
-    for (const path of ["/vehicles", "/how-it-works", "/our-services", "/faq", "/contact"]) {
-      expect(body).toContain(path);
+    // Every route in every language: eight paths times four locales.
+    for (const locale of ["fr", "de", "it", "en"]) {
+      expect(body).toContain(`/${locale}/vehicles`);
+      expect(body).toContain(`/${locale}/contact`);
     }
   });
 

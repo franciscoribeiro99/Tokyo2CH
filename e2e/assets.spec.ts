@@ -26,15 +26,33 @@ test.describe("static assets", () => {
   for (const path of PAGES) {
     test(`every image on ${path} actually loads`, async ({ page }) => {
       await page.goto(path);
-      await page.waitForLoadState("networkidle");
 
-      const broken = await page.evaluate(() =>
-        Array.from(document.images)
-          .filter((image) => !image.complete || image.naturalWidth === 0)
-          .map((image) => image.currentSrc || image.src),
-      );
+      /**
+       * Scroll the page first. Most of these are lazy, so they only begin
+       * loading once they near the viewport — without this, WebKit and Firefox
+       * report them as incomplete and the test fails on images that were never
+       * asked for. Chromium happened to load them anyway, which is exactly the
+       * kind of difference that makes a browser-specific flake.
+       */
+      await page.evaluate(async () => {
+        for (let y = 0; y < document.body.scrollHeight; y += window.innerHeight / 2) {
+          window.scrollTo(0, y);
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+        window.scrollTo(0, 0);
+      });
 
-      expect(broken, `broken images on ${path}`).toEqual([]);
+      await expect
+        .poll(
+          () =>
+            page.evaluate(() =>
+              Array.from(document.images)
+                .filter((image) => !image.complete || image.naturalWidth === 0)
+                .map((image) => image.currentSrc || image.src),
+            ),
+          { message: `broken images on ${path}`, timeout: 15_000 },
+        )
+        .toEqual([]);
     });
   }
 

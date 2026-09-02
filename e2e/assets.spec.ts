@@ -25,32 +25,56 @@ const PAGES = ["/fr", "/fr/vehicles", "/fr/how-it-works", "/fr/contact"] as cons
 test.describe("static assets", () => {
   for (const path of PAGES) {
     test(`every image on ${path} actually loads`, async ({ page }) => {
+      /**
+       * Generous on purpose. This asserts the bytes arrive, not how quickly:
+       * on a cold `.next/cache/images` the optimiser has to produce every
+       * variant on demand, and a page of six photographs can sit well past the
+       * default budget on a CI runner. The proxy regression this file exists
+       * for is caught in milliseconds by the direct-request tests below, so a
+       * long wait here costs nothing in coverage and buys a suite that does not
+       * cry wolf.
+       */
+      test.setTimeout(90_000);
+
       await page.goto(path);
 
       /**
-       * Scroll the page first. Most of these are lazy, so they only begin
-       * loading once they near the viewport — without this, WebKit and Firefox
-       * report them as incomplete and the test fails on images that were never
-       * asked for. Chromium happened to load them anyway, which is exactly the
-       * kind of difference that makes a browser-specific flake.
+       * Opt every image out of lazy loading rather than scrolling to provoke it,
+       * and do it inside the poll so it is reasserted on every attempt.
+       *
+       * The earlier version scrolled in fixed steps and polled for 15s, which
+       * made the check a race against viewport heuristics that differ per
+       * browser: on a loaded CI runner one below-the-fold image had still not
+       * arrived when the budget ran out. Flipping `loading` starts the request
+       * immediately, so the wait is bounded by the network rather than by how
+       * far something happened to be scrolled.
+       *
+       * `decode()` looked like the tidier wait and is not portable: Firefox
+       * rejects it when the candidate is re-selected mid-decode, which reads as
+       * a broken image on a page that is fine.
        */
-      await page.evaluate(async () => {
-        for (let y = 0; y < document.body.scrollHeight; y += window.innerHeight / 2) {
-          window.scrollTo(0, y);
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        }
-        window.scrollTo(0, 0);
-      });
-
       await expect
         .poll(
           () =>
-            page.evaluate(() =>
-              Array.from(document.images)
-                .filter((image) => !image.complete || image.naturalWidth === 0)
-                .map((image) => image.currentSrc || image.src),
-            ),
-          { message: `broken images on ${path}`, timeout: 15_000 },
+            page.evaluate(() => {
+              const broken: string[] = [];
+
+              for (const image of document.images) {
+                image.loading = "eager";
+                if (!image.complete || image.naturalWidth === 0) {
+                  /**
+                   * `currentSrc` is empty until a candidate loads, so a failure
+                   * falls back to `src` — for next/image the largest srcset
+                   * entry, which no browser here ever requests. Worth knowing
+                   * before chasing the URL a failure prints.
+                   */
+                  broken.push(image.currentSrc || image.src);
+                }
+              }
+
+              return broken;
+            }),
+          { message: `broken images on ${path}`, timeout: 60_000 },
         )
         .toEqual([]);
     });

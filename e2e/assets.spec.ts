@@ -24,16 +24,49 @@ const PAGES = ["/fr", "/fr/vehicles", "/fr/how-it-works", "/fr/contact"] as cons
 
 test.describe("static assets", () => {
   for (const path of PAGES) {
-    test(`every image on ${path} actually loads`, async ({ page }) => {
+    test(`no image on ${path} fails to load`, async ({ page }) => {
+      /**
+       * Asserted at the network layer, not on `<img>` state.
+       *
+       * The earlier version waited for every image to report `complete` with a
+       * non-zero `naturalWidth`. That makes the check a race against when the
+       * browser decides to fetch a lazy image: it failed CI on three different
+       * pages and two different images while the optimiser was serving every
+       * variant in under 0.65s. Scrolling to provoke the loads, then flipping
+       * `loading` to eager, then stretching the budget to 60s each moved the
+       * flake without removing it.
+       *
+       * What the proxy bug actually did was make image requests answer 307,
+       * 404 and 400, so that is what to assert. A response either carries a
+       * failing status or it does not — there is no waiting involved, and an
+       * image the browser never asks for cannot produce a false failure.
+       */
+      const failures: string[] = [];
+      let images = 0;
+      let inFlight = 0;
+
+      page.on("request", (request) => {
+        if (request.resourceType() === "image") inFlight += 1;
+      });
+
+      page.on("response", (response) => {
+        if (response.request().resourceType() !== "image") return;
+        images += 1;
+        inFlight -= 1;
+        if (!response.ok()) failures.push(`${response.status()} ${response.url()}`);
+      });
+
+      page.on("requestfailed", (request) => {
+        if (request.resourceType() !== "image") return;
+        inFlight -= 1;
+        failures.push(`${request.failure()?.errorText ?? "failed"} ${request.url()}`);
+      });
+
       await page.goto(path);
 
-      /**
-       * Scroll the page first. Most of these are lazy, so they only begin
-       * loading once they near the viewport — without this, WebKit and Firefox
-       * report them as incomplete and the test fails on images that were never
-       * asked for. Chromium happened to load them anyway, which is exactly the
-       * kind of difference that makes a browser-specific flake.
-       */
+      // Lazy images only start near the viewport, and an image never requested
+      // is one this test never sees. The count assertion below is what stops
+      // that silence from passing for success.
       await page.evaluate(async () => {
         for (let y = 0; y < document.body.scrollHeight; y += window.innerHeight / 2) {
           window.scrollTo(0, y);
@@ -41,18 +74,19 @@ test.describe("static assets", () => {
         }
         window.scrollTo(0, 0);
       });
+      /**
+       * Wait on the image requests themselves, not on `networkidle`: these
+       * pages stream a video, so the network never goes quiet and the wait
+       * simply burned the whole test budget. Bounded, and deliberately not an
+       * assertion — a request still in flight is not a failure, and the direct
+       * requests below catch the proxy regression whatever this observes.
+       */
+      for (let waited = 0; inFlight > 0 && waited < 15_000; waited += 250) {
+        await page.waitForTimeout(250);
+      }
 
-      await expect
-        .poll(
-          () =>
-            page.evaluate(() =>
-              Array.from(document.images)
-                .filter((image) => !image.complete || image.naturalWidth === 0)
-                .map((image) => image.currentSrc || image.src),
-            ),
-          { message: `broken images on ${path}`, timeout: 15_000 },
-        )
-        .toEqual([]);
+      expect(failures, `failing image responses on ${path}`).toEqual([]);
+      expect(images, `no image was requested on ${path} at all`).toBeGreaterThan(0);
     });
   }
 

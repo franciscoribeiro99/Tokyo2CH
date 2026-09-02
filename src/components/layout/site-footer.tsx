@@ -19,11 +19,18 @@ export function SiteFooter({ locale, dictionary }: SiteFooterProps) {
       <Container>
         <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-sm space-y-3">
-            <p>
-              {/* The mark is decorative; this text is what gets announced. */}
-              <span className="sr-only">{siteConfig.name}</span>
-              <Logo className="h-6" />
-            </p>
+            {/* Mark and signature are one lockup, so they sit tighter to each
+                other than to anything else in the column. */}
+            <div className="space-y-2">
+              <p>
+                {/* The mark is decorative; this text is what gets announced. */}
+                <span className="sr-only">{siteConfig.name}</span>
+                <Logo className="h-8" />
+              </p>
+              <p className="font-display text-sm italic leading-none tracking-tight">
+                {siteConfig.slogan}
+              </p>
+            </div>
             <p className="text-pretty text-muted-foreground text-sm leading-relaxed">
               {dictionary.brand.tagline}
             </p>

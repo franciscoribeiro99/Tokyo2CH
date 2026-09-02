@@ -30,6 +30,18 @@ describe("SiteFooter", () => {
     }
   });
 
+  /**
+   * The signature is brand copy, not dictionary copy: it reads the same in
+   * every locale, so this asserts it survives a non-English render.
+   */
+  it("shows the brand signature beside the mark, untranslated", () => {
+    for (const locale of ["fr", "de"] as const) {
+      const view = render(<SiteFooter locale={locale} dictionary={fr} />);
+      expect(screen.getByText(siteConfig.slogan)).toBeVisible();
+      view.unmount();
+    }
+  });
+
   it("exposes the contact email as a mailto link", () => {
     render(<SiteFooter locale="fr" dictionary={fr} />);
     expect(screen.getByRole("link", { name: siteConfig.contact.email })).toHaveAttribute(

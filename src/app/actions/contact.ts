@@ -5,6 +5,7 @@ import { getDictionaryFor } from "@/content/dictionaries";
 import {
   type ContactFormState,
   type ContactInput,
+  type ContactValues,
   makeContactSchema,
   toFieldErrors,
 } from "@/lib/contact-schema";
@@ -33,7 +34,7 @@ export async function submitContactForm(
   const copy = getDictionaryFor(locale).form;
   const contactSchema = makeContactSchema(copy.errors);
 
-  const parsed = contactSchema.safeParse({
+  const raw = {
     firstName: formData.get("firstName"),
     lastName: formData.get("lastName"),
     email: formData.get("email"),
@@ -46,8 +47,20 @@ export async function submitContactForm(
     requirements: formData.get("requirements"),
     notes: formData.get("notes"),
     referral: formData.get("referral"),
-    website: formData.get("website"),
-  });
+  };
+
+  /**
+   * What the visitor typed, handed back on every failure.
+   *
+   * React resets an uncontrolled `<form action>` to each field's defaultValue
+   * once the action settles, so without this a single rejected field wipes the
+   * whole form. The honeypot is deliberately absent: it is never echoed.
+   */
+  const submittedValues = Object.fromEntries(
+    Object.entries(raw).map(([field, value]) => [field, typeof value === "string" ? value : ""]),
+  ) as ContactValues;
+
+  const parsed = contactSchema.safeParse({ ...raw, website: formData.get("website") });
 
   if (!parsed.success) {
     const fieldErrors = toFieldErrors(parsed.error);
@@ -58,7 +71,7 @@ export async function submitContactForm(
       return { status: "success", message: copy.success };
     }
 
-    return { status: "error", message: copy.errors.fix, fieldErrors };
+    return { status: "error", message: copy.errors.fix, fieldErrors, values: submittedValues };
   }
 
   try {
@@ -67,7 +80,9 @@ export async function submitContactForm(
   } catch (error) {
     // Log detail server-side; never leak internals to the browser.
     console.error("[contact] delivery failed", error);
-    return { status: "error", message: copy.errors.failed };
+    // Valid data that we failed to deliver: hand it back so a retry costs the
+    // visitor a click rather than the whole form again.
+    return { status: "error", message: copy.errors.failed, values: submittedValues };
   }
 }
 

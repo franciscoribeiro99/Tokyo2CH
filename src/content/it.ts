@@ -348,7 +348,6 @@ export const it = {
     errors: {
       firstName: "Inserisci il tuo nome.",
       firstNameLong: "Questo nome è troppo lungo.",
-      lastName: "Inserisci il tuo cognome.",
       lastNameLong: "Questo cognome è troppo lungo.",
       email: "Inserisci un indirizzo e-mail valido.",
       phoneLong: "Questo numero è troppo lungo.",

@@ -37,7 +37,9 @@ function optionalChoice(allowed: readonly string[], message: string) {
 export function makeContactSchema(errors: ErrorCopy) {
   return z.object({
     firstName: z.string().trim().min(1, errors.firstName).max(80, errors.firstNameLong),
-    lastName: z.string().trim().min(1, errors.lastName).max(80, errors.lastNameLong),
+    /** Optional: a first name, an e-mail and a phone number are enough to
+     *  answer a first enquiry, and demanding a surname loses real leads. */
+    lastName: z.string().trim().max(80, errors.lastNameLong).optional().or(z.literal("")),
     email: z.email(errors.email).max(320),
     /** Phone or WhatsApp. Unvalidated beyond length: international formats
      *  vary too much to reject on a pattern without losing real leads. */
@@ -67,8 +69,12 @@ export type ContactInput = z.infer<ContactSchema>;
 
 export type ContactFieldErrors = Partial<Record<keyof ContactInput, string[]>>;
 
+export type ContactValues = Partial<Record<keyof ContactInput, string>>;
+
 export interface ContactFormState {
   readonly status: "idle" | "success" | "error";
+  /** Echoed back on failure so the visitor does not retype what they sent. */
+  readonly values?: ContactValues;
   readonly message?: string;
   readonly fieldErrors?: ContactFieldErrors;
 }

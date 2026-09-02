@@ -37,6 +37,7 @@ describe("contactSchema", () => {
     ["additional requirements", "requirements"],
     ["free-text notes", "notes"],
     ["the referral answer", "referral"],
+    ["the surname", "lastName"],
   ])("treats %s as optional", (_label, field) => {
     const { [field as keyof typeof valid]: _omitted, ...rest } = valid;
     expect(schema.safeParse(rest).success).toBe(true);
@@ -44,13 +45,20 @@ describe("contactSchema", () => {
 
   it.each([
     ["a missing first name", { firstName: "" }],
-    ["a missing last name", { lastName: "" }],
     ["a malformed email", { email: "not-an-email" }],
     ["no vehicle", { vehicle: "" }],
     ["no desired year", { year: "" }],
     ["no budget", { budget: "" }],
   ])("rejects %s", (_label, override) => {
     expect(schema.safeParse({ ...valid, ...override }).success).toBe(false);
+  });
+
+  /**
+   * A first name and a way to reply are enough to answer an enquiry. Demanding
+   * a surname turned one blank box into a rejected submission.
+   */
+  it("accepts a blank surname", () => {
+    expect(schema.safeParse({ ...valid, lastName: "" }).success).toBe(true);
   });
 
   /**

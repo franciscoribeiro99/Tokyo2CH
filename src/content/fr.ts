@@ -357,7 +357,6 @@ export const fr = {
     errors: {
       firstName: "Veuillez indiquer votre prénom.",
       firstNameLong: "Ce prénom est trop long.",
-      lastName: "Veuillez indiquer votre nom.",
       lastNameLong: "Ce nom est trop long.",
       email: "Veuillez saisir une adresse e-mail valide.",
       phoneLong: "Ce numéro est trop long.",

@@ -8,6 +8,7 @@ import {
   makeContactSchema,
   toFieldErrors,
 } from "@/lib/contact-schema";
+import { resolveDeliveryMode } from "@/lib/delivery-mode";
 import { sendContactEmail } from "@/lib/mailer";
 
 /**
@@ -73,23 +74,16 @@ export async function submitContactForm(
 /**
  * Hand a validated enquiry to the mail transport.
  *
- * `CONTACT_DELIVERY_MODE` decides between the two:
- *   log      -> validate and log, send nothing. The default outside production,
- *               and what the E2E suite runs under so the happy-path test does
- *               not post real mail on every CI run.
- *   provider -> send over SMTP. The default in production.
+ *   log      -> validate and log, send nothing. What previews and the E2E
+ *               suite run under, so the happy-path test does not post real
+ *               mail on every CI run.
+ *   provider -> send over SMTP.
  *
- * The production default is deliberately the one that can fail: a contact form
- * that silently swallows leads is far worse than one that errors on the first
- * deploy. A missing credential surfaces here as a thrown error naming the
- * variable, which the caller turns into the visitor-facing failure message.
+ * A missing credential surfaces here as a thrown error naming the variable,
+ * which the caller turns into the visitor-facing failure message.
  */
 async function deliver(input: ContactInput, locale: Locale): Promise<void> {
-  const mode =
-    process.env.CONTACT_DELIVERY_MODE ??
-    (process.env.NODE_ENV === "production" ? "provider" : "log");
-
-  if (mode === "log") {
+  if (resolveDeliveryMode() === "log") {
     console.warn(`[contact] delivery mode is "log"; dropped message from ${input.email}`);
     return;
   }

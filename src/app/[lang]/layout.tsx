@@ -2,6 +2,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Zen_Kaku_Gothic_New } from "next/font/google";
+import localFont from "next/font/local";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SkipLink } from "@/components/layout/skip-link";
@@ -25,7 +26,7 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
-/** Display face for headings. Latin only — see KANA_FONT_HREF below. */
+/** Display face for headings. Latin only — the kana come from zenKakuKana. */
 const zenKaku = Zen_Kaku_Gothic_New({
   variable: "--font-zen-display",
   subsets: ["latin"],
@@ -41,13 +42,33 @@ const zenKaku = Zen_Kaku_Gothic_New({
  * no kana at all and 日本からスイスへ falls back to whatever the operating
  * system supplies, or to empty boxes on a machine with no Japanese font.
  *
- * Google Fonts' `text=` parameter returns a file containing only the glyphs
- * asked for: roughly two kilobytes rather than the several megabytes a full
- * Japanese face weighs. It has to be a plain link because `next/font` exposes
- * no equivalent.
+ * The file is Google's own `text=` subset, which returns only the glyphs asked
+ * for: 1.4 kB rather than the several megabytes a full Japanese face weighs.
+ * It is committed and served from our own origin. Loading it over a `<link>`
+ * to fonts.googleapis.com, as this did before, sent every visitor's IP address
+ * to a third country on every page view for two kilobytes of font — a data
+ * export to disclose under art. 16-17 nLPD, bought for nothing.
+ *
+ * `unicode-range` keeps the face scoped to the seven codepoints it actually
+ * contains, so the browser fetches it only when that string is rendered and
+ * never consults it for latin text.
+ *
+ * `adjustFontFallback` is off deliberately. It would emit a metric-adjusted
+ * fallback family alongside this one, and that family carries no
+ * `unicode-range` — first in the display stack, it would capture every latin
+ * heading on the site and render it in adjusted Arial.
  */
-const KANA_FONT_HREF =
-  "https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700&text=%E6%97%A5%E6%9C%AC%E3%81%8B%E3%82%89%E3%82%B9%E3%82%A4%E3%82%B9%E3%81%B8&display=swap";
+const zenKakuKana = localFont({
+  src: "../fonts/zen-kaku-gothic-new-kana-700.woff2",
+  variable: "--font-zen-kana",
+  weight: "700",
+  style: "normal",
+  display: "swap",
+  adjustFontFallback: false,
+  declarations: [
+    { prop: "unicode-range", value: "U+304b, U+3078, U+3089, U+30a4, U+30b9, U+65e5, U+672c" },
+  ],
+});
 
 /** Prerenders all four languages at build time. */
 export function generateStaticParams() {
@@ -94,12 +115,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       // Next.js 16 stopped auto-overriding a global `scroll-behavior: smooth`
       // during route transitions; opt back in to the instant scroll-to-top.
       data-scroll-behavior="smooth"
-      className={`${geistSans.variable} ${geistMono.variable} ${zenKaku.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${zenKaku.variable} ${zenKakuKana.variable} h-full antialiased`}
     >
-      <head>
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="stylesheet" href={KANA_FONT_HREF} />
-      </head>
       <body className="flex min-h-full flex-col">
         <ThemeProvider
           attribute="class"

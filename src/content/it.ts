@@ -399,7 +399,7 @@ export const it = {
         },
         {
           heading: "Cookie",
-          body: "Questo sito non utilizza cookie pubblicitari né tracciatori di terze parti a fini di profilazione. La tua scelta di lingua viene memorizzata solo nel browser; non contiene alcun identificativo e non viene trasmessa a nessuno.",
+          body: "Questo sito non utilizza alcun cookie: né pubblicitario, né di misurazione, né tecnico. Finché non scegli il tema chiaro o scuro, nulla viene salvato nel tuo browser; questa scelta viene poi conservata localmente, non contiene alcun identificativo e non viene trasmessa a nessuno. La tua lingua è indicata nell'indirizzo della pagina e non viene memorizzata. Puoi rifiutare o cancellare questa memorizzazione in qualsiasi momento nelle impostazioni del browser, senza perdere funzionalità. L'affluenza al sito è misurata in forma aggregata dal nostro provider di hosting Vercel, senza cookie e senza profilazione. I caratteri tipografici sono serviti dai nostri server: durante la visita non viene inviata alcuna richiesta a terzi.",
         },
         {
           heading: "Contatto",

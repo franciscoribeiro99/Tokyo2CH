@@ -9,9 +9,13 @@
   --color-foreground: var(--foreground);
   --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
-  /* Display face is loaded by next/font in layout.tsx as --font-zen-display. */
-  --font-heading: var(--font-zen-display), "Geist", ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-zen-display), "Geist", ui-sans-serif, system-ui, sans-serif;
+  /* Both display faces are loaded by next/font in layout.tsx. --font-zen-kana
+     is listed first but is scoped by unicode-range to the seven kana in the
+     hero, so every latin glyph falls through to --font-zen-display. */
+  --font-heading:
+    var(--font-zen-kana), var(--font-zen-display), "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-display:
+    var(--font-zen-kana), var(--font-zen-display), "Geist", ui-sans-serif, system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);

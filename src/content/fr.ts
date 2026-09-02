@@ -408,7 +408,7 @@ export const fr = {
         },
         {
           heading: "Cookies",
-          body: "Ce site ne dépose aucun cookie publicitaire et n'utilise aucun traceur tiers à des fins de profilage. Votre choix de langue est mémorisé côté navigateur uniquement ; il ne contient aucun identifiant et n'est transmis à personne.",
+          body: "Ce site ne dépose aucun cookie : ni publicitaire, ni de mesure, ni technique. Tant que vous ne choisissez pas le thème clair ou sombre, rien n'est enregistré dans votre navigateur ; ce choix est ensuite conservé localement, ne contient aucun identifiant et n'est transmis à personne. Votre langue figure dans l'adresse de la page et n'est pas mémorisée. Vous pouvez refuser ou effacer ce stockage à tout moment dans les réglages de votre navigateur, sans perte de fonctionnalité. La fréquentation du site est mesurée de façon agrégée par notre hébergeur Vercel, sans cookie et sans profilage. Les polices de caractères sont servies depuis nos propres serveurs : aucune requête vers un tiers n'est émise lors de votre visite.",
         },
         {
           heading: "Contact",

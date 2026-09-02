@@ -396,7 +396,7 @@ export const en = {
         },
         {
           heading: "Cookies",
-          body: "This site sets no advertising cookies and uses no third-party trackers for profiling. Your language choice is remembered in your browser only; it contains no identifier and is never transmitted to anyone.",
+          body: "This site sets no cookies at all: none for advertising, none for measurement, none technical. Until you choose the light or dark theme, nothing is stored in your browser; that choice is then kept locally, contains no identifier, and is never transmitted to anyone. Your language is part of the page address and is not stored. You can refuse or clear this storage at any time in your browser settings, with no loss of functionality. Site traffic is measured in aggregate by our host Vercel, without cookies and without profiling. Fonts are served from our own servers: no request is made to any third party during your visit.",
         },
         {
           heading: "Contact",

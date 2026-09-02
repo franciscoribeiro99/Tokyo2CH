@@ -400,7 +400,7 @@ export const de = {
         },
         {
           heading: "Cookies",
-          body: "Diese Website setzt keine Werbecookies und verwendet keine Tracker Dritter zur Profilbildung. Ihre Sprachwahl wird ausschliesslich im Browser gespeichert; sie enthält keine Kennung und wird an niemanden übermittelt.",
+          body: "Diese Website setzt keine Cookies: weder für Werbung noch für Messung oder Technik. Solange Sie kein helles oder dunkles Design wählen, wird nichts in Ihrem Browser gespeichert; diese Wahl wird anschliessend lokal abgelegt, enthält keine Kennung und wird an niemanden übermittelt. Ihre Sprache steht in der Adresse der Seite und wird nicht gespeichert. Sie können diese Speicherung jederzeit in den Einstellungen Ihres Browsers ablehnen oder löschen, ohne Funktionsverlust. Die Websitenutzung wird von unserem Hosting-Anbieter Vercel aggregiert gemessen, ohne Cookies und ohne Profilbildung. Die Schriftarten werden von unseren eigenen Servern ausgeliefert: Bei Ihrem Besuch wird keine Anfrage an Dritte gesendet.",
         },
         {
           heading: "Kontakt",

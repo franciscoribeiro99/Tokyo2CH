@@ -26,6 +26,14 @@ export const siteConfig = {
   name: "Tokyo2CH",
   shortName: "Tokyo2CH",
   tagline: "Your Japanese vehicle, brought to Switzerland.",
+  /**
+   * The brand signature, set beneath the mark in the client's own artwork.
+   *
+   * Deliberately not in the dictionaries: it stays English on every locale,
+   * the way a signature does. Translating it would make it four different
+   * slogans instead of one brand.
+   */
+  slogan: "Dream big, dream JDM.",
   description:
     "Tokyo2CH sources and imports Japanese vehicles to Switzerland on demand, guiding clients through selection, shipping, regulations, and registration.",
 

@@ -348,7 +348,6 @@ export const de = {
     errors: {
       firstName: "Bitte geben Sie Ihren Vornamen an.",
       firstNameLong: "Dieser Vorname ist zu lang.",
-      lastName: "Bitte geben Sie Ihren Nachnamen an.",
       lastNameLong: "Dieser Nachname ist zu lang.",
       email: "Bitte geben Sie eine gültige E-Mail-Adresse an.",
       phoneLong: "Diese Nummer ist zu lang.",

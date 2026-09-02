@@ -345,7 +345,6 @@ export const en = {
     errors: {
       firstName: "Please enter your first name.",
       firstNameLong: "That first name is too long.",
-      lastName: "Please enter your last name.",
       lastNameLong: "That last name is too long.",
       email: "Please enter a valid email address.",
       phoneLong: "That number is too long.",

@@ -179,12 +179,13 @@ export function renderContactEmail(
 ): ContactEmail {
   const copy = fr.form;
 
-  const name = sanitizeHeader(`${input.firstName} ${input.lastName}`);
+  // The surname is optional, so build the display name from what is there.
+  const name = sanitizeHeader([input.firstName, input.lastName].filter(Boolean).join(" "));
   const vehicle = sanitizeHeader(input.vehicle);
 
   const rows: readonly (readonly [string, string])[] = [
     [copy.first, input.firstName],
-    [copy.last, input.lastName],
+    [copy.last, present(input.lastName)],
     [copy.email, input.email],
     [copy.phone, present(input.phone)],
     [copy.vehicle, input.vehicle],

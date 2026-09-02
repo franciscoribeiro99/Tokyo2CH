@@ -51,6 +51,8 @@ interface NativeSelectProps {
   readonly name: string;
   readonly options: readonly { readonly value: string; readonly label: string }[];
   readonly placeholder: string;
+  /** Echoed back after a failed submission; "" selects the placeholder. */
+  readonly value?: string;
   readonly invalid?: boolean;
   readonly describedBy?: string;
   readonly required?: boolean;
@@ -69,15 +71,40 @@ function NativeSelect({
   name,
   options,
   placeholder,
+  value,
   invalid,
   describedBy,
   required,
 }: NativeSelectProps) {
+  const ref = useRef<HTMLSelectElement>(null);
+
+  /**
+   * Keep the DOM in step with the echoed value.
+   *
+   * On update React writes `defaultValue` through to `node.defaultValue` for an
+   * input, but for a select it only assigns `.value` and never touches each
+   * option's `defaultSelected` — so React's post-action form reset snapped the
+   * choice back to the placeholder while the text fields kept their content.
+   * Setting both the default and the current value makes this correct whichever
+   * order the reset and this effect run in.
+   */
+  useEffect(() => {
+    const select = ref.current;
+    if (!select) return;
+
+    const next = value ?? "";
+    for (const option of select.options) {
+      option.defaultSelected = option.value === next;
+    }
+    if (select.value !== next) select.value = next;
+  }, [value]);
+
   return (
     <select
+      ref={ref}
       id={id}
       name={name}
-      defaultValue=""
+      defaultValue={value ?? ""}
       required={required}
       aria-invalid={invalid}
       aria-describedby={describedBy}
@@ -144,38 +171,41 @@ export function ContactForm({ locale, copy }: ContactFormProps) {
 
       {/* Name is one question asked in two boxes, so it is one group. */}
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 font-medium text-sm">
-          {copy.name} <RequiredMark />
-        </legend>
+        <legend className="mb-2 font-medium text-sm">{copy.name}</legend>
 
         <div className="grid gap-4 sm:grid-cols-2">
+          {/* Labels sit above their box: below, a stacked mobile layout puts
+              them next to the *following* field and the pairing reads wrong. */}
           <div className="flex flex-col gap-1.5">
+            <Label htmlFor={id("firstName")} className="text-muted-foreground text-xs">
+              {copy.first} <RequiredMark />
+            </Label>
             <Input
               id={id("firstName")}
               name="firstName"
+              defaultValue={state.values?.firstName ?? ""}
               autoComplete="given-name"
               required
               aria-invalid={!!errors.firstName}
               aria-describedby={describedBy("firstName")}
             />
-            <Label htmlFor={id("firstName")} className="text-muted-foreground text-xs">
-              {copy.first}
-            </Label>
             <FieldError id={errorId("firstName")} errors={errors.firstName} />
           </div>
 
+          {/* Optional, and therefore unmarked: a first name plus a way to reply
+              is enough to answer an enquiry. */}
           <div className="flex flex-col gap-1.5">
-            <Input
-              id={id("lastName")}
-              name="lastName"
-              autoComplete="family-name"
-              required
-              aria-invalid={!!errors.lastName}
-              aria-describedby={describedBy("lastName")}
-            />
             <Label htmlFor={id("lastName")} className="text-muted-foreground text-xs">
               {copy.last}
             </Label>
+            <Input
+              id={id("lastName")}
+              name="lastName"
+              defaultValue={state.values?.lastName ?? ""}
+              autoComplete="family-name"
+              aria-invalid={!!errors.lastName}
+              aria-describedby={describedBy("lastName")}
+            />
             <FieldError id={errorId("lastName")} errors={errors.lastName} />
           </div>
         </div>
@@ -188,6 +218,7 @@ export function ContactForm({ locale, copy }: ContactFormProps) {
         <Input
           id={id("email")}
           name="email"
+          defaultValue={state.values?.email ?? ""}
           type="email"
           autoComplete="email"
           required
@@ -199,7 +230,13 @@ export function ContactForm({ locale, copy }: ContactFormProps) {
 
       <div className="flex flex-col gap-2">
         <Label htmlFor={id("phone")}>{copy.phone}</Label>
-        <Input id={id("phone")} name="phone" type="tel" autoComplete="tel" />
+        <Input
+          id={id("phone")}
+          name="phone"
+          defaultValue={state.values?.phone ?? ""}
+          type="tel"
+          autoComplete="tel"
+        />
       </div>
 
       <div className="flex flex-col gap-2">
@@ -209,6 +246,7 @@ export function ContactForm({ locale, copy }: ContactFormProps) {
         <Input
           id={id("vehicle")}
           name="vehicle"
+          defaultValue={state.values?.vehicle ?? ""}
           placeholder={copy.vehiclePlaceholder}
           required
           aria-invalid={!!errors.vehicle}
@@ -225,6 +263,7 @@ export function ContactForm({ locale, copy }: ContactFormProps) {
           <Input
             id={id("year")}
             name="year"
+            defaultValue={state.values?.year ?? ""}
             placeholder={copy.yearPlaceholder}
             required
             aria-invalid={!!errors.year}
@@ -240,6 +279,7 @@ export function ContactForm({ locale, copy }: ContactFormProps) {
           <Input
             id={id("budget")}
             name="budget"
+            defaultValue={state.values?.budget ?? ""}
             placeholder={copy.budgetPlaceholder}
             required
             aria-invalid={!!errors.budget}
@@ -257,6 +297,7 @@ export function ContactForm({ locale, copy }: ContactFormProps) {
           <NativeSelect
             id={id("transmission")}
             name="transmission"
+            value={state.values?.transmission ?? ""}
             options={copy.transmissionOptions}
             placeholder={copy.selectPlaceholder}
             required
@@ -273,6 +314,7 @@ export function ContactForm({ locale, copy }: ContactFormProps) {
           <NativeSelect
             id={id("condition")}
             name="condition"
+            value={state.values?.condition ?? ""}
             options={copy.conditionOptions}
             placeholder={copy.selectPlaceholder}
             required
@@ -288,13 +330,14 @@ export function ContactForm({ locale, copy }: ContactFormProps) {
         <Input
           id={id("requirements")}
           name="requirements"
+          defaultValue={state.values?.requirements ?? ""}
           placeholder={copy.requirementsPlaceholder}
         />
       </div>
 
       <div className="flex flex-col gap-2">
         <Label htmlFor={id("notes")}>{copy.notes}</Label>
-        <Textarea id={id("notes")} name="notes" rows={5} />
+        <Textarea id={id("notes")} name="notes" defaultValue={state.values?.notes ?? ""} rows={5} />
       </div>
 
       <div className="flex flex-col gap-2">
@@ -302,6 +345,7 @@ export function ContactForm({ locale, copy }: ContactFormProps) {
         <NativeSelect
           id={id("referral")}
           name="referral"
+          value={state.values?.referral ?? ""}
           options={copy.referralOptions}
           placeholder={copy.selectPlaceholder}
         />
